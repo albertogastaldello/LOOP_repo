@@ -25,5 +25,5 @@ subjectsID = string(subjectsID_numeric);
 
 %% save
 
-save("SubjectsID.m", "subjectsID");
-save("SubjectsIDNumeric.m", "subjectsID_numeric");
+save("SubjectsID.mat", "subjectsID");
+save("SubjectsIDNumeric.mat", "subjectsID_numeric");
