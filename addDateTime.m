@@ -50,6 +50,13 @@ for i=1:n_subj
     curr_subjStruct.BGM = sortrows(curr_subjStruct.BGM, 'DeviceDtTm');
     curr_subjStruct.exercise = sortrows(curr_subjStruct.exercise, 'DeviceDtTm');
     curr_subjStruct.food = sortrows(curr_subjStruct.food, 'DeviceDtTm');
+
+    % remove possible duplicates in exercise table
+
+    if(~isempty(curr_subjStruct.exercise))
+        [~, unique_exercise_indices] = unique(curr_subjStruct.exercise.DeviceDtTm, 'stable');
+        curr_subjStruct.exercise = curr_subjStruct.exercise(unique_exercise_indices, :);
+    end
     
     % update subject structure
     data_tables_all.(subjectsID{i,1}) = curr_subjStruct;
