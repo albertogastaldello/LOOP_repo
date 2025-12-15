@@ -51,11 +51,14 @@ for i=1:n_subj
     curr_subjStruct.exercise = sortrows(curr_subjStruct.exercise, 'DeviceDtTm');
     curr_subjStruct.food = sortrows(curr_subjStruct.food, 'DeviceDtTm');
 
-    % remove possible duplicates in exercise table
+    % remove possible duplicates in exercise table and remove not valid
+    % exercise entries
 
     if(~isempty(curr_subjStruct.exercise))
         [~, unique_exercise_indices] = unique(curr_subjStruct.exercise.DeviceDtTm, 'stable');
         curr_subjStruct.exercise = curr_subjStruct.exercise(unique_exercise_indices, :);
+
+        curr_subjStruct.exercise = curr_subjStruct.exercise(~strcmp(curr_subjStruct.exercise.ExerciseName, ""),:);
     end
     
     % update subject structure
