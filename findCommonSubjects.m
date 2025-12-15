@@ -14,6 +14,6 @@ bolusSubjID = load("bolus_subjectsID_numeric.mat").bolus_subjectsID_numeric;
 common_subjectsID_numeric = intersect(intersect(intersect(rosterSubjID, cgmSubjID), basalSubjID), bolusSubjID);
 common_subjectsID = string(common_subjectsID_numeric);
 
-save("common_subjectsID_numeric", "common_subjectsID_numeric");
-save("common_subjectsID", "common_subjectsID");
+save("common_subjectsID_numeric.mat", "common_subjectsID_numeric");
+save("common_subjectsID.mat", "common_subjectsID");
 
