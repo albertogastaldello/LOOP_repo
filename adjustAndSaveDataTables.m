@@ -35,6 +35,10 @@ save("droppedSubjectsID.mat", "dropped_subjectsID");
 adverseEvents.eventDt = datetime(adverseEvents.eventDt, 'InputFormat', 'ddMMMyyyy');
 deviceIssues.date = datetime(deviceIssues.date, 'InputFormat', 'ddMMMyyyy');
 
+% Add column for height in cm and weight in kg 
+surveys.height_cm = surveys.height_feet.*30.48;
+surveys.weight_kg = surveys.weight.*0.453592;
+
 
 %% for each subject, select its data and save them in a dedicated folder
 
