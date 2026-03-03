@@ -41,7 +41,7 @@
 # 8. createExerciseTable.m to first intersect common_subjectsID.mat with
 # subjects that have wizard data. The ID of the intersected subjects are
 # saved in commonWizard_subjectsID.mat. Then it creates a table for each 
-# exercise session with all information and some computed metrics.
+# exercise session with all information.
 # The table is saved as exerciseTable.mat
 
 
@@ -49,6 +49,11 @@
 # duplicates, sessions completely contained in others, 
 # sessions that overlap, and sessions too close in time. The filtered
 # exercise table is saved as exerciseTable_filtered.mat
+
+
+# 10. exerciseForBN.m to load exerciseTable_filtered.mat and computing
+# various metrics useful for the developing of Bayesian Network. 
+# The table is saved as exerciseTableForBN.mat
 
 
 
