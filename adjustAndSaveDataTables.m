@@ -36,7 +36,7 @@ adverseEvents.eventDt = datetime(adverseEvents.eventDt, 'InputFormat', 'ddMMMyyy
 deviceIssues.date = datetime(deviceIssues.date, 'InputFormat', 'ddMMMyyyy');
 
 % Add column for height in cm and weight in kg 
-surveys.height_cm = surveys.height_feet.*30.48;
+surveys.height_cm = (surveys.height_feet.*12 + surveys.height_inches)*2.54;
 surveys.weight_kg = surveys.weight.*0.453592;
 
 
