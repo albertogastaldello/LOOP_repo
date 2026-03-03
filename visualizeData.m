@@ -6,10 +6,12 @@ close all
 
 common_subjectsID = load("common_subjectsID.mat").common_subjectsID;
 common_subjectsID_numeric = load("common_subjectsID_numeric.mat").common_subjectsID_numeric;
+commonWizard_subjectsID = load("commonWizard_subjectsID.mat").commonWizard_subjectsID;
 
-subj_idx = 126; % choose an index
+subj_idx = 5; % choose an index
 
-subjID = common_subjectsID(subj_idx);
+%subjID = common_subjectsID(subj_idx);
+subjID = commonWizard_subjectsID(subj_idx);
 
 base_path = '/Users/albertogastaldello/Desktop/LOOP_Data/Loop study public dataset 2023-01-31';
 
@@ -48,7 +50,6 @@ y_spacing = 1;   % spazio verticale tra attività se vuoi separarle
 n_exercises = height(subjStruct.exercise);
 
 
-
 for i = 1:n_exercises
     x_start = subjStruct.exercise.DeviceDtTm(i);
     x_end   = x_start + seconds(subjStruct.exercise.DurationValue(i));  
@@ -70,8 +71,8 @@ grid on;
 
 ax3 = subplot(3,1,3);
 hold on
-stem(bolus_data.datetime, bolus_data.bolus, 'r');
-plot(basal_data.datetime, basal_data.basal_rate, 'b');
+stem(bolus_data.datetime_aligned, bolus_data.bolus, 'r');
+plot(basal_data.datetime_aligned, basal_data.basal_rate, 'b');
 title('Bolus and basal insulin')
 xlabel('Time');
 
