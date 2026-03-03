@@ -46,10 +46,24 @@ for i=1:n_subj
         end
     end
 
+    if(~isempty(curr_subjStruct.wizard))
+
+        wizard_missing_indices = find(ismissing(curr_subjStruct.wizard.DeviceDtTm));
+        if ~isdatetime(curr_subjStruct.wizard.DeviceDtTm)
+            curr_subjStruct.wizard.DeviceDtTm = datetime(curr_subjStruct.wizard.DeviceDtTm,'ConvertFrom','datenum');
+        end
+
+
+        if(~isempty(wizard_missing_indices))
+            curr_subjStruct.wizard.DeviceDtTm(wizard_missing_indices) = curr_subjStruct.wizard.UTCDtTm(wizard_missing_indices) + hours(curr_timeZoneOffset);
+        end
+    end
+
     % sort tables in chronological order
     curr_subjStruct.BGM = sortrows(curr_subjStruct.BGM, 'DeviceDtTm');
     curr_subjStruct.exercise = sortrows(curr_subjStruct.exercise, 'DeviceDtTm');
     curr_subjStruct.food = sortrows(curr_subjStruct.food, 'DeviceDtTm');
+    curr_subjStruct.wizard = sortrows(curr_subjStruct.wizard, 'DeviceDtTm');
 
     % remove possible duplicates in exercise table and remove not valid
     % exercise entries
