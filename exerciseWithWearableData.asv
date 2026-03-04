@@ -46,33 +46,35 @@ for i = 1:length(subjectsID)
     curr_wizard = subjectsStruct.(struct_patientField).wizard;
     curr_wizard = sortrows(curr_wizard, 'DeviceDtTm');
 
+    curr_subjectMealData = subjectsStruct.(struct_patientField).food;
+    mealColumsToKeep = ["PtID", ""]
+
     % -------------------------
     % Loop over sessions
     % -------------------------
     for j = 1:height(curr_exercise)
         curr_session = curr_exercise(j,:);
 
-        % compute CGM outcomes
-        [curr_outcomes, cgmPreExercise_table, cgmExercise_table, cgmPostExercise_table, isValidSession] = ...
-            getOutcomes(curr_session, cgm_data, outcomeNames);
+        % get CGM data
+        [cgmPreExercise_table, cgmExercise_table, cgmPostExercise_table, isValidSession] = ...
+            getCgmData(curr_session, cgm_data);
 
         if ~isValidSession
             continue
         end
 
-        % Prepare CGM struct
+        % Add CGM data
         tmpCgm = struct();
-        for k = 1:numel(outcomeNames)
-            tmpCgm.(outcomeNames(k)) = curr_outcomes(k);
-        end
+
         tmpCgm.cgmPreExercise  = cgmPreExercise_table;
         tmpCgm.cgmExercise     = cgmExercise_table;
         tmpCgm.cgmPostExercise = cgmPostExercise_table;
 
-        % Prepare insulin struct
+        % Get Insulin Data
         [curr_CF, curr_CR, curr_tslb, curr_lb, curr_tslBasal, curr_lBasal, curr_IOB] = ...
             getInsulinInfo(curr_session, curr_wizard, bolus_data, basal_data);
-
+        
+        % Add insulin data
         tmpInsulin = struct(...
             'InsSensitivity', curr_CF, ...
             'InsCarbRatio', curr_CR, ...
@@ -82,6 +84,11 @@ for i = 1:length(subjectsID)
             'LastBasal', curr_lBasal, ...
             'IOB', curr_IOB ...
         );
+
+        % get meal data
+        
+
+        curr_sessionMealData = getMealData(curr_session, )
 
         curr_session.cgmInfo     = struct();
         curr_session.insulinInfo = struct();
@@ -132,11 +139,9 @@ end
 
 % getOutcomes
 
-function [outcomes, cgmPreExercise_table, cgmExercise_table, cgmPostExercise_table, isValidSession] = ...
-         getOutcomes(session, cgm, outcomeNames)
+function [cgmPreExercise_table, cgmExercise_table, cgmPostExercise_table, isValidSession] = ...
+         getCgmData(session, cgm)
 
-    nOutcomes = length(outcomeNames);
-    outcomes = NaN(1, nOutcomes);
     isValidSession = true;
 
     startExercise = session.DeviceDtTm;
@@ -180,18 +185,7 @@ function [outcomes, cgmPreExercise_table, cgmExercise_table, cgmPostExercise_tab
         isValidSession = false;
         return
     end
-
-    % compute outcomes
-    for j = 1:nOutcomes
-        switch outcomeNames(j)
-            case "ExcursionDuringActivity"
-                outcomes(1,j) = glucoseEnd - glucoseStart;
-            case "RoCDuringActivity"
-                outcomes(1,j) = (glucoseEnd - glucoseStart)/session.DurationValue;
-            case "HypoglycemiaEvent"
-                outcomes(1,j) = any(cgm.cgm(idxExercise) < 70);
-            case "SevereHypoglycemiaEvent"
-                outcomes(1,j) = any(cgm.cgm(idxExercise) < 54);
-        end
-    end
 end
+
+%%
+%save("exerciseTableForBN.mat", "exercise_table");

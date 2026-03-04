@@ -51,8 +51,14 @@
 # exercise table is saved as exerciseTable_filtered.mat
 
 
-# 10. exerciseForBN.m to load exerciseTable_filtered.mat and computing
-# various metrics useful for the developing of Bayesian Network. 
+# 10. exerciseWithWearableData.m to load exerciseTable_filtered.mat, 
+# remove exercise sessions that last less than 15 minutes, and add 
+# wearable data around each exercise session (cgm, insulin, meals). 
+# The table is saved as exerciseTableWithWearableData.mat
+
+
+# 11. ?? to load exerciseTableWithWearableData.mat, and compute various  
+# metrics useful for the developing of Bayesian Network. 
 # The table is saved as exerciseTableForBN.mat
 
 
