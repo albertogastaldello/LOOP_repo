@@ -2,7 +2,7 @@ function exerciseWithWearableData()
 
     % Load filtered exercise table
     exercise = load("exerciseTable_filtered.mat").exerciseTable_clean;
-    exercise(exercise.DurationValue < 15, :) = [];
+    % exercise(exercise.DurationValue < 15, :) = [];
     
     base_path = '/Users/albertogastaldello/Desktop/LOOP_Data/Loop study public dataset 2023-01-31';
     subjectsStruct = load("dataTablesStructure_withDateTime.mat").data_tables_all;
@@ -15,15 +15,21 @@ function exerciseWithWearableData()
     
     % Preallocate exercise_valid table
     exercise_valid = exercise([],:);           % empty table with same columns
+    exercise_valid.AOB = zeros(0,1);
+    exercise_valid.CWL = zeros(0,1);
+    exercise_valid.ACWR = zeros(0,1);
     exercise_valid.insulinData = {};           % cell for insulin struct
     exercise_valid.cgmData     = {};           % cell for CGM struct
     exercise_valid.mealData    = {};           % cell for meal table
     exercise_valid.COB = zeros(0,1);
+
     
     % COB curve
     load('COB.mat');
     
     counter = 0;
+
+    tau = 600; % AOB decay constant, 600 minutes (10 hours)
     
     % Loop over subjects
     for i = 1:length(subjectsID)
@@ -73,6 +79,13 @@ function exerciseWithWearableData()
             
             preExercise   = startExercise - hours(2);
             postExercise  = endExercise + hours(6);
+
+            % -------- ACUTE:CHRONIC WORKLOAD RATIO ---------
+            
+            [aob, cwl, acwr] = computeACWR(curr_session, curr_exercise, tau);
+            curr_session.AOB = aob;
+            curr_session.CWL = cwl;
+            curr_session.ACWR = acwr;
             
             % -------- CGM WINDOWS --------
             
@@ -175,6 +188,54 @@ function exerciseWithWearableData()
     % save
     tables_path = '/Users/albertogastaldello/Desktop/LOOP_repo/tables/';
     save(fullfile(tables_path, "exerciseTableWithWearableData.mat"), "exercise_valid");
+
+end
+
+% compute ACWR function
+
+function [aob, cwl, acwr] = computeACWR(curr_session, curr_exercise, tau)
+    
+    % compute the load of current session as (MET - 1)*duration
+    curr_session_load = (curr_session.MET - 1) * curr_session.DurationValue;
+
+    % look for sessions included in 48 hours prior current session start
+    % for computing AOB
+    curr_sessionStart = curr_session.DeviceDtTm;
+    aob_timeWindow = curr_sessionStart - hours(48);
+    aob_sessions = curr_exercise(curr_exercise.DeviceDtTm < curr_sessionStart ...
+        & curr_exercise.DeviceDtTm >= aob_timeWindow, :);
+    aob = 0;
+    if ~isempty(aob_sessions)
+        for j=1:height(aob_sessions)
+            curr_load = (aob_sessions.MET(j) - 1) * aob_sessions.DurationValue(j);
+            curr_timeDiff = minutes(curr_sessionStart - aob_sessions.DeviceDtTm(j));
+            curr_aob = curr_load * exp(-(curr_timeDiff)/tau);
+            aob = aob + curr_aob;
+        end
+    end
+
+    % look for sessions included in 7 days prior current session start for
+    % computing CWL
+
+    cwl_timeWindow = curr_sessionStart - hours(168);
+    cwl_sessions = curr_exercise(curr_exercise.DeviceDtTm < curr_sessionStart ...
+        & curr_exercise.DeviceDtTm >= cwl_timeWindow, :);
+    cwl = 0;
+    if ~isempty(cwl_sessions)
+        for j=1:height(cwl_sessions)
+            curr_cwl = (cwl_sessions.MET(j) - 1) * cwl_sessions.DurationValue(j);
+            cwl = cwl + curr_cwl;
+        end
+    end
+
+    cwl = cwl/7; % average across 7 days
+
+    % compute ACWR
+    if cwl == 0
+        acwr = Inf;
+    else
+        acwr = (curr_session_load + aob)/cwl;
+    end
 
 end
 

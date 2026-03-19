@@ -36,14 +36,15 @@ function filterExerciseSessions()
         % ===== STEP 3: HANDLE PARTIAL OVERLAP =====
         [curr_sessions_removedOverlap, pairCounterOverlap, overlapLog] = ...
             handlePartialOverlap(curr_sessions_removedContained, pairCounterOverlap, overlapLog);
-    
+        % 
         % ===== STEP 4: REMOVE SESSIONS WITH PREVIOUS SESSION CLOSER THAN 6
         % HOURS
-        [curr_sessions_removedCloseSessions, pairCounterTooClose, tooCloseLog] = ...
-            removeTooCloseSessions(curr_sessions_removedOverlap, pairCounterTooClose, tooCloseLog);
+        % [curr_sessions_removedCloseSessions, pairCounterTooClose, tooCloseLog] = ...
+        %     removeTooCloseSessions(curr_sessions_removedOverlap, pairCounterTooClose, tooCloseLog);
     
         % ===== STEP 5: ACCUMULA TABELLA PULITA =====
-        exerciseTable_clean = [exerciseTable_clean; curr_sessions_removedCloseSessions];
+        exerciseTable_clean = [exerciseTable_clean; curr_sessions_removedOverlap];
+        %exerciseTable_clean = [exerciseTable_clean; curr_sessions_removedCloseSessions];
     
     end
     
