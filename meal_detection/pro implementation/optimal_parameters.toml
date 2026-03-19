@@ -1,0 +1,23 @@
+cgm_threshold = 90
+peak_threshold = 0.01
+cgm_increase_threshold = 10
+default_recovery_carbohydrates_grams = 20
+default_meal_size_grams = 49
+
+[savgol_filter]
+window_length = 20
+polyorder = 6
+delta = 5
+
+[peak_search]
+i1_min = 9
+i1_max = 11
+
+[peak_base]
+i2_min = 4
+max_relative_height = 0.4
+
+[peak_detection]
+height = 0.0175
+prominence = 0.0275
+distance = 9
