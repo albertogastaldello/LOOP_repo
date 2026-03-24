@@ -8,7 +8,7 @@ addpath("tables/");
 
 exercise_table = load("exerciseTable.mat").exercise_table;
 exercise_tableFiltered = load("exerciseTable_filtered.mat").exerciseTable_clean;
-% exerciseTableForBN = load("exerciseTableForBN.mat").exerciseTableForBN;
+exerciseTableForBN = load("exerciseTableForBN.mat").exerciseTableForBN;
 
 %% choose a random subject
 

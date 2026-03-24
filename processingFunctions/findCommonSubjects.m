@@ -1,10 +1,10 @@
-function findCommonSubjects(code_path)
+function findCommonSubjects(code_path, base_path)
 
     % find subjects ID in common with all data and save them
     
-    roster = readtable("Data Tables/PtRoster.txt");
-    surveys = readtable("Data Tables/Surveys.txt");
-    sampleResults = readtable("Data Tables/SampleResults.txt");
+    roster = readtable(fullfile(base_path, 'Data Tables', 'PtRoster.txt'));
+    surveys = readtable(fullfile(base_path, 'Data Tables', 'Surveys.txt'));
+    sampleResults = readtable(fullfile(base_path, 'Data Tables', 'SampleResults.txt'));
     
     rosterSubjID = roster.PtID;
     rosterCompleted = roster(strcmp(roster.PtStatus, 'Completed'),:);

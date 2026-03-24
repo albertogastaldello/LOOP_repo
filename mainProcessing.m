@@ -7,12 +7,13 @@ close all
 addpath("processingFunctions/");
 addpath("subjectsID/");
 addpath("tables/");
+addpath("/Users/albertogastaldello/Desktop/PAxT1D_BN/LOOP_Data/Loop study public dataset 2023-01-31/");
+
+base_path = '/Users/albertogastaldello/Desktop/PAxT1D_BN/LOOP_Data/Loop study public dataset 2023-01-31';
+code_path = '/Users/albertogastaldello/Desktop/PAxT1D_BN/LOOP_repo';
 
 %% 1. getAndSaveSubjectsID.m to save the subjects ID of cgm, bolus and basal files.
  
-base_path = '/Users/albertogastaldello/Desktop/LOOP_Data/Loop study public dataset 2023-01-31';
-code_path = '/Users/albertogastaldello/Desktop/LOOP_repo';
-
 disp('getAndSaveSubjectsID');
 
 getAndSaveSubjectsID(base_path, code_path);
@@ -24,7 +25,7 @@ getAndSaveSubjectsID(base_path, code_path);
 
 disp('findCommonSubjects');
 
-findCommonSubjects(code_path);
+findCommonSubjects(code_path, base_path);
 
 %% 3. adjustAndSaveDataTables.m file to load interesting data tables, 
 % extract and save each subject time zone offset in 
@@ -35,15 +36,17 @@ findCommonSubjects(code_path);
 
 disp('adjustAndSaveDataTables');
 
-adjustAndSaveDataTables(code_path);
+adjustAndSaveDataTables(code_path, base_path);
 
-%% 4. alignBolusAndBasal.m to align basal and bolus datetime with the
+%% DISMISSED IT SINCE DON'T NEEDED FOR IOB ESTIMATION
+
+% 4. alignBolusAndBasal.m to align basal and bolus datetime with the
 % cgm datetime. Tables are override and can be found in 
 % LOOP_data/Loop study public dataset 2023-01-31/data_type={basal/bolus/cgm}
 
-disp('alignBolusAndBasal');
-
-alignBolusAndBasal(base_path);
+% disp('alignBolusAndBasal');
+% 
+% alignBolusAndBasal(base_path);
 
 %% 5. createDataTablesStructure.m file to create and save a unique 
 % structure (dataTablesStructure.mat) that contains the data tables 
@@ -51,7 +54,7 @@ alignBolusAndBasal(base_path);
 
 disp('createDataTablesStructure');
 
-createDataTablesStructure();
+createDataTablesStructure(code_path, base_path);
 
 %% 6. addDateTime.m file to loop on each subject and apply the time zone 
 % offset present in roster data to the column 'UTCDtTm' of BGM, food and 
@@ -72,7 +75,7 @@ addDateTime();
 
 disp('createExerciseTable');
 
-createExerciseTable(code_path);
+createExerciseTable(code_path, base_path);
 
 %% 8. filterExerciseSessions.m to filter the exercise table removing 
 % duplicates, sessions completely contained in others, sessions that 
@@ -81,7 +84,7 @@ createExerciseTable(code_path);
 
 disp('filterExerciseSessions');
 
-filterExerciseSessions();
+stats = filterExerciseSessions();
 
 %% 9. exerciseWithWearableData.m to load exerciseTable_filtered.mat, 
 % (remove exercise sessions that last less than 15 minutes), and add 

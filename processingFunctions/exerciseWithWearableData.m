@@ -4,7 +4,7 @@ function exerciseWithWearableData()
     exercise = load("exerciseTable_filtered.mat").exerciseTable_clean;
     % exercise(exercise.DurationValue < 15, :) = [];
     
-    base_path = '/Users/albertogastaldello/Desktop/LOOP_Data/Loop study public dataset 2023-01-31';
+    base_path = '/Users/albertogastaldello/Desktop/PAxT1D_BN/LOOP_Data/Loop study public dataset 2023-01-31';
     subjectsStruct = load("dataTablesStructure_withDateTime.mat").data_tables_all;
     
     % Columns of meals data to keep
@@ -43,6 +43,11 @@ function exerciseWithWearableData()
         cgm_data   = readtable(fullfile(base_path, ['data_type=cgm/patient_id=' num2str(curr_subjID)], 'cgm.csv'));
         basal_data = readtable(fullfile(base_path, ['data_type=basal/patient_id=' num2str(curr_subjID)], 'basal.csv'));
         bolus_data = readtable(fullfile(base_path, ['data_type=bolus/patient_id=' num2str(curr_subjID)], 'bolus.csv'));
+
+        % Force Babelbetes strings to UTC Datetime
+        cgm_data.datetime = datetime(cgm_data.datetime, 'InputFormat', 'yyyy-MM-dd HH:mm:ss');
+        basal_data.datetime = datetime(basal_data.datetime, 'InputFormat', 'yyyy-MM-dd HH:mm:ss');
+        bolus_data.datetime = datetime(bolus_data.datetime, 'InputFormat', 'yyyy-MM-dd HH:mm:ss');
         
         % -------- REMOVE CGM DUPLICATES --------
         
@@ -54,19 +59,13 @@ function exerciseWithWearableData()
         
         cgm_data = sortrows(cgm_data,'datetime');
         
-        % Convert timestamps
-        cgm_data.datenum   = datenum(cgm_data.datetime);
-        basal_data.datenum = datenum(basal_data.datetime_aligned);
-        bolus_data.datenum = datenum(bolus_data.datetime_aligned);
-        
         % -------- SUBJECT DATA --------
         
         curr_wizard = subjectsStruct.(struct_patientField).wizard;
-        curr_wizard = sortrows(curr_wizard,'DeviceDtTm');
-        curr_wizard.datenum = datenum(curr_wizard.DeviceDtTm);
+        curr_wizard = sortrows(curr_wizard,'UTCDtTm');
         
         curr_subjectMealData = subjectsStruct.(struct_patientField).food(:, mealColumsToKeep);
-        curr_subjectMealData.datenum = datenum(curr_subjectMealData.DeviceDtTm);
+        curr_subjectMealData = sortrows(curr_subjectMealData, 'UTCDtTm');
         
         % -------- LOOP SESSIONS --------
         
@@ -74,10 +73,11 @@ function exerciseWithWearableData()
             
             curr_session = curr_exercise(j,:);
             
-            startExercise = curr_session.DeviceDtTm;
-            endExercise   = startExercise + minutes(curr_session.DurationValue);
+            startExercise = curr_session.UTCDtTm;
+            exerciseDuration = curr_session.DurationValue;
+            endExercise   = startExercise + minutes(exerciseDuration);
             
-            preExercise   = startExercise - hours(2);
+            preExercise   = startExercise - hours(6);
             postExercise  = endExercise + hours(6);
 
             % -------- ACUTE:CHRONIC WORKLOAD RATIO ---------
@@ -89,19 +89,18 @@ function exerciseWithWearableData()
             
             % -------- CGM WINDOWS --------
             
-            idxExercise = cgm_data.datenum >= datenum(startExercise) & ...
-                          cgm_data.datenum <= datenum(endExercise);
-            
-            idxPre = cgm_data.datenum >= datenum(preExercise) & ...
-                     cgm_data.datenum <= datenum(startExercise);
-            
-            idxPost = cgm_data.datenum >= datenum(endExercise) & ...
-                      cgm_data.datenum <= datenum(postExercise);
+            idxExercise = cgm_data.datetime >= startExercise & ...
+                cgm_data.datetime <= endExercise;
+            idxPre = cgm_data.datetime >= preExercise & ...
+                cgm_data.datetime <= startExercise;
+            idxPost = cgm_data.datetime >= endExercise & ...
+                cgm_data.datetime <= postExercise;
             
             % Minimum number of points
-            if height(cgm_data(idxPre,:)) < 0.85*24 || ...
-               height(cgm_data(idxExercise,:)) < 3 || ...
-               height(cgm_data(idxPost,:)) < 0.85*72
+            % if sum(idxPre) < 0.85 * 72 || sum(idxExercise) < 3 || ...
+            %         sum(idxPost) < 0.85 * 72
+            if sum(idxPre) < 0.85 * 72 || sum(idxExercise) < 0.85 * exerciseDuration/5 ...
+                    || sum(idxPost) < 0.85 * 72
                 continue
             end
             
@@ -126,7 +125,7 @@ function exerciseWithWearableData()
             
             [curr_CF, curr_CR, curr_tslb, curr_lb, ...
              curr_tslBasal, curr_lBasal, curr_IOB] = ...
-                getInsulinInfo(curr_session, curr_wizard, bolus_data, basal_data);
+                getInsulinInfo(startExercise, curr_wizard, bolus_data, basal_data);
             
             tmpInsulin = struct( ...
                 'InsSensitivity',curr_CF, ...
@@ -142,12 +141,11 @@ function exerciseWithWearableData()
             preMeal  = startExercise - hours(6);
             postMeal = endExercise + hours(6);
             
-            idxMeal = curr_subjectMealData.datenum >= datenum(preMeal) & ...
-                      curr_subjectMealData.datenum <= datenum(postMeal);
-            
+            idxMeal = curr_subjectMealData.UTCDtTm >= preMeal & ...
+                curr_subjectMealData.UTCDtTm <= postMeal;
             sessionMealData = curr_subjectMealData(idxMeal,:);
     
-            mealTimes = sessionMealData.DeviceDtTm;
+            mealTimes = sessionMealData.UTCDtTm;
             mealCHO = sessionMealData.CarbsNet;
     
             timeDiff = minutes(startExercise - mealTimes);
@@ -186,7 +184,7 @@ function exerciseWithWearableData()
     exercise_valid = exercise_valid(1:counter,:);
     
     % save
-    tables_path = '/Users/albertogastaldello/Desktop/LOOP_repo/tables/';
+    tables_path = '/Users/albertogastaldello/Desktop/PAxT1D_BN/LOOP_repo/tables/';
     save(fullfile(tables_path, "exerciseTableWithWearableData.mat"), "exercise_valid");
 
 end
@@ -195,22 +193,28 @@ end
 
 function [aob, cwl, acwr] = computeACWR(curr_session, curr_exercise, tau)
     
-    % compute the load of current session as (MET - 1)*duration
-    curr_session_load = (curr_session.MET - 1) * curr_session.DurationValue;
+    % compute the load of current session as MET*duration
+    % NB: NOT MET - 1 BECAUSE HEALTHKIT PROVIDES ACTIVE ENERGY VALUE, SO
+    % THE 'SITTING' ENERGY CONSUMPTION (I.E. THE MINUS 1 IN MET VALUE) IS
+    % ALREADY SUBSTRACTED
+    curr_session_load = curr_session.MET * curr_session.DurationValue;
 
     % look for sessions included in 48 hours prior current session start
     % for computing AOB
-    curr_sessionStart = curr_session.DeviceDtTm;
+    curr_sessionStart = curr_session.UTCDtTm;
+
     aob_timeWindow = curr_sessionStart - hours(48);
-    aob_sessions = curr_exercise(curr_exercise.DeviceDtTm < curr_sessionStart ...
-        & curr_exercise.DeviceDtTm >= aob_timeWindow, :);
+    aob_sessions = curr_exercise(curr_exercise.UTCDtTm < curr_sessionStart ...
+        & curr_exercise.UTCDtTm >= aob_timeWindow, :);
     aob = 0;
     if ~isempty(aob_sessions)
         for j=1:height(aob_sessions)
-            curr_load = (aob_sessions.MET(j) - 1) * aob_sessions.DurationValue(j);
-            curr_timeDiff = minutes(curr_sessionStart - aob_sessions.DeviceDtTm(j));
-            curr_aob = curr_load * exp(-(curr_timeDiff)/tau);
-            aob = aob + curr_aob;
+            curr_load = aob_sessions.MET(j) * aob_sessions.DurationValue(j);
+            curr_timeDiff = minutes(curr_sessionStart - ...
+                (aob_sessions.UTCDtTm(j) + minutes(aob_sessions.DurationValue(j))));
+            if curr_timeDiff > 0
+                aob = aob + (curr_load * exp(-(curr_timeDiff)/tau));
+            end
         end
     end
 
@@ -218,12 +222,12 @@ function [aob, cwl, acwr] = computeACWR(curr_session, curr_exercise, tau)
     % computing CWL
 
     cwl_timeWindow = curr_sessionStart - hours(168);
-    cwl_sessions = curr_exercise(curr_exercise.DeviceDtTm < curr_sessionStart ...
-        & curr_exercise.DeviceDtTm >= cwl_timeWindow, :);
+    cwl_sessions = curr_exercise(curr_exercise.UTCDtTm < curr_sessionStart ...
+        & curr_exercise.UTCDtTm >= cwl_timeWindow, :);
     cwl = 0;
     if ~isempty(cwl_sessions)
         for j=1:height(cwl_sessions)
-            curr_cwl = (cwl_sessions.MET(j) - 1) * cwl_sessions.DurationValue(j);
+            curr_cwl = cwl_sessions.MET(j) * cwl_sessions.DurationValue(j);
             cwl = cwl + curr_cwl;
         end
     end
@@ -241,27 +245,27 @@ end
 
 % getInsulinInfo function
 
-function [CF, CR, tslb, lb, tslBasal, lBasal, IOB] = getInsulinInfo(session, wizard, bolus_data, basal_data)
+function [CF, CR, tslb, lb, tslBasal, lBasal, IOB] = getInsulinInfo(startExercise, wizard, bolus_data, basal_data)
     CF=NaN; CR=NaN; tslb=NaN; lb=NaN; tslBasal=NaN; lBasal=NaN; IOB=NaN;
     maxTolerance = minutes(30);
-    startExercise = session.DeviceDtTm;
     
     % Wizard CF and CR
 
     % CLOSEST IN TIME TO START EXERCISE, BEFORE OR AFTER
-  
-    timeDiff = abs(wizard.DeviceDtTm - startExercise);
-    validIdx = timeDiff <= maxTolerance;
     
-    if any(validIdx)
-        [~, minIdxRel] = min(timeDiff(validIdx));
+    if ~isempty(wizard)
+        % Find the absolute closest wizard event (before or after)
+        timeDiff = abs(wizard.UTCDtTm - startExercise);
+        [minDiff, idx] = min(timeDiff);
         
-        validIndices = find(validIdx);
-        idx = validIndices(minIdxRel);
-        
+        % Always extract CF and CR from the closest record (No time limit)
         CF = wizard.InsulinSensitivity(idx);
         CR = wizard.InsulinCarbRatio(idx);
-        IOB = wizard.InsulinOnBoard(idx);
+        
+        % Only extract IOB if the closest event is within the 30-minute tolerance
+        if minDiff <= maxTolerance
+            IOB = wizard.InsulinOnBoard(idx);
+        end
     end
 
     % ONLY BEFORE START OF EXERCISE
@@ -273,18 +277,103 @@ function [CF, CR, tslb, lb, tslBasal, lBasal, IOB] = getInsulinInfo(session, wiz
     %         IOB = wizard.InsulinOnBoard(idx);
     %     end
     % end
+
+    % Estimate IOB if not available
+
+    if isnan(IOB)
+        ts = 5; 
+        time_edges = (startExercise - hours(6)) : minutes(ts) : startExercise;
+        num_bins = length(time_edges) - 1;
+        insulin_inputs = zeros(num_bins, 1);
+        
+        % --- A. PROCESS BOLUSES ---
+        idx_bolus = bolus_data.datetime >= time_edges(1) & bolus_data.datetime < time_edges(end);
+        recent_boluses = bolus_data(idx_bolus, :);
+        for b = 1:height(recent_boluses)
+            bin_idx = find(time_edges <= recent_boluses.datetime(b), 1, 'last');
+            if bin_idx > num_bins; bin_idx = num_bins; end
+            insulin_inputs(bin_idx) = insulin_inputs(bin_idx) + recent_boluses.bolus(b);
+        end
+
+        % --- B. PROCESS NET BASAL (The Median Proxy Method) ---
+        % Find the underlying scheduled basal rate using the median of the last 48 hours
+        idx_48h = basal_data.datetime >= (startExercise - hours(48)) & basal_data.datetime <= startExercise;
+        if any(idx_48h)
+            % Use median to filter out temporary spikes and suspensions
+            baseline_rate = median(basal_data.basal_rate(idx_48h), 'omitnan');
+        else
+            baseline_rate = 0; % Fallback
+        end
+
+        idx_basal = basal_data.datetime >= (time_edges(1) - hours(1)) & basal_data.datetime < time_edges(end);
+        recent_basals = basal_data(idx_basal, :);
+
+        for b = 1:height(recent_basals)
+            start_time = recent_basals.datetime(b);
+            
+            % Safely determine duration if BabelBetes dropped it
+            if ismember('duration', recent_basals.Properties.VariableNames)
+                % Assuming BabelBetes duration is in minutes
+                end_time = start_time + minutes(recent_basals.duration(b));
+            else
+                % Dynamic calculation: duration is until the next basal change
+                if b < height(recent_basals)
+                    end_time = recent_basals.datetime(b+1);
+                else
+                    end_time = startExercise; % Cap at exercise start
+                end
+            end
+            
+            % Net Basal Deviation
+            rate = recent_basals.basal_rate(b);
+            net_rate_hr = rate - baseline_rate; 
+            
+            % Convert U/hr to Units per 5-minute bin
+            net_units_per_bin = net_rate_hr * (ts / 60);
+            
+            for bin = 1:num_bins
+                bin_center = time_edges(bin) + minutes(ts/2);
+                if bin_center >= start_time && bin_center <= end_time
+                    insulin_inputs(bin) = insulin_inputs(bin) + net_units_per_bin;
+                end
+            end
+        end
+
+        k1 = 0.0173; 
+        k2 = 0.0116; 
+        k3 = 6.73;
+        
+        t = 0:359; % Minutes 0 to 359
+        
+        % Calculate the 360-minute curve (Vectorized)
+        term1 = -k3 / (k2 * (k1 - k2)) .* (exp(-k2 .* t ./ 0.75) - 1);
+        term2 =  k3 / (k1 * (k1 - k2)) .* (exp(-k1 .* t ./ 0.75) - 1);
+        iob_6h_curve = 1 - 0.75 .* (term1 + term2) ./ 2.4947e4;
+        
+        % Subsample every ts=5 minutes 
+        % (Python's [ts::ts] maps to MATLAB indices starting at t=5, which is index 6)
+        iob_6h_curve_sub = iob_6h_curve((ts+1):ts:end); 
+        
+        % Convolve the bolus input array with the decay curve
+        iob_conv = conv(insulin_inputs, iob_6h_curve_sub);
+        
+        % The IOB at exactly T_start is the value at the end of the bolus array
+        IOB = iob_conv(num_bins);
+
+    end
+
     
     % Last bolus info
-    idx_bolus = find(bolus_data.datenum <= datenum(startExercise), 1, 'last');
+    idx_bolus = find(bolus_data.datetime <= startExercise, 1, 'last');
     if ~isempty(idx_bolus)
-        tslb = minutes(startExercise - bolus_data.datetime_aligned(idx_bolus));
+        tslb = minutes(startExercise - bolus_data.datetime(idx_bolus));
         lb   = bolus_data.bolus(idx_bolus);
     end
     
     % Last basal info
-    idx_basal = find(basal_data.datenum <= datenum(startExercise), 1, 'last');
+    idx_basal = find(basal_data.datetime <= startExercise, 1, 'last');
     if ~isempty(idx_basal)
-        tslBasal = minutes(startExercise - basal_data.datetime_aligned(idx_basal));
+        tslBasal = minutes(startExercise - basal_data.datetime(idx_basal));
         lBasal   = basal_data.basal_rate(idx_basal);
     end
 end

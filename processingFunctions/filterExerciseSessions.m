@@ -1,18 +1,27 @@
-function filterExerciseSessions()
+function stats = filterExerciseSessions()
 
     % ================= LOAD DATA =================
     exerciseTable = load("exerciseTable.mat").exercise_table;
     subjIDs       = unique(exerciseTable.PtID);
     
     % ================= LOG INIZIALI =================
+    nullDurationLog = table();
     duplicateLog  = table();
     containedLog  = table();
     overlapLog    = table();
     tooCloseLog = table();
+    
     pairCounterDup      = 0;
     pairCounterContained = 0;
     pairCounterOverlap   = 0;
     pairCounterTooClose = 0;
+
+    totalRemovedNullDuration = 0;
+    totalRemovedDup = 0;
+    totalRemovedContained = 0;
+    totalRemovedOverlap = 0;
+
+    initialCount = height(exerciseTable);
     
     exerciseTable_clean = table();
     
@@ -23,53 +32,87 @@ function filterExerciseSessions()
         curr_sessions = exerciseTable(exerciseTable.PtID == curr_subjID, :);
     
         % Ordina temporalmente
-        curr_sessions = sortrows(curr_sessions, "DeviceDtTm");
-    
-        % ===== STEP 1: REMOVE DUPLICATES =====
+        curr_sessions = sortrows(curr_sessions, "UTCDtTm");
+
+        startCount = height(curr_sessions);
+
+        % ===== STEP 1: REMOVE DURATION = 0 =====
+        [curr_sessions_removedNullDuration, nullDurationLog] = removeNullDuration(curr_sessions, nullDurationLog);
+        totalRemovedNullDuration = totalRemovedNullDuration + (startCount - height(curr_sessions_removedNullDuration));
+
+        % ===== STEP 2: REMOVE DUPLICATES =====
+        countBefore2 = height(curr_sessions_removedNullDuration);
         [curr_sessions_removedDuplicates, pairCounterDup, duplicateLog] = ...
-            removeDuplicates(curr_sessions, pairCounterDup, duplicateLog);
+            removeDuplicates(curr_sessions_removedNullDuration, pairCounterDup, duplicateLog);
+        totalRemovedDup = totalRemovedDup + (countBefore2 - height(curr_sessions_removedDuplicates));
     
-        % ===== STEP 2: REMOVE CONTAINED SESSIONS =====
+        % ===== STEP 3: REMOVE CONTAINED SESSIONS =====
+        countBefore3 = height(curr_sessions_removedDuplicates);
         [curr_sessions_removedContained, pairCounterContained, containedLog] = ...
             removeContainedSessions(curr_sessions_removedDuplicates, pairCounterContained, containedLog);
+        totalRemovedContained = totalRemovedContained + (countBefore3 - height(curr_sessions_removedContained));
     
-        % ===== STEP 3: HANDLE PARTIAL OVERLAP =====
+        % ===== STEP 4: HANDLE PARTIAL OVERLAP =====
+        countBefore4 = height(curr_sessions_removedContained);
         [curr_sessions_removedOverlap, pairCounterOverlap, overlapLog] = ...
             handlePartialOverlap(curr_sessions_removedContained, pairCounterOverlap, overlapLog);
+        totalRemovedOverlap = totalRemovedOverlap + (countBefore4 - height(curr_sessions_removedOverlap));
+
         % 
-        % ===== STEP 4: REMOVE SESSIONS WITH PREVIOUS SESSION CLOSER THAN 6
+        % ===== STEP 5: REMOVE SESSIONS WITH PREVIOUS SESSION CLOSER THAN 6
         % HOURS
         % [curr_sessions_removedCloseSessions, pairCounterTooClose, tooCloseLog] = ...
         %     removeTooCloseSessions(curr_sessions_removedOverlap, pairCounterTooClose, tooCloseLog);
     
-        % ===== STEP 5: ACCUMULA TABELLA PULITA =====
+        % ===== STEP 6: ACCUMULA TABELLA PULITA =====
         exerciseTable_clean = [exerciseTable_clean; curr_sessions_removedOverlap];
         %exerciseTable_clean = [exerciseTable_clean; curr_sessions_removedCloseSessions];
     
     end
+
+    stats.InitialSessions = initialCount;
+    stats.CleanedSessions = height(exerciseTable_clean);
+    stats.TotalRemoved    = initialCount - height(exerciseTable_clean);
+
+    stats.ByFilter.NullDuration = totalRemovedNullDuration;
+    stats.ByFilter.Duplicates = totalRemovedDup;
+    stats.ByFilter.Contained  = totalRemovedContained;
+    stats.ByFilter.Overlap    = totalRemovedOverlap;
     
     % save filtered exercise table
-    tables_path = '/Users/albertogastaldello/Desktop/LOOP_repo/tables/';
+    tables_path = '/Users/albertogastaldello/Desktop/PAxT1D_BN/LOOP_repo/tables/';
     save(fullfile(tables_path, "exerciseTable_filtered.mat"), "exerciseTable_clean");
 
 end
     
 % ================= FUNZIONI DI FILTRAGGIO =================
 
+% REMOVE NULL DURATION SESSIONS
+function [curr_sessions, nullDurationLog] = removeNullDuration(curr_sessions, nullDurationLog)
+    nullDurationIndices = find(curr_sessions.DurationValue == 0);
+    if ~isempty(nullDurationIndices)
+        nullDurationLog = [nullDurationLog; curr_sessions(nullDurationIndices,:)];
+        curr_sessions(nullDurationIndices,:) = [];
+    end
+
+    
+end
+
+
 % REMOVE DUPLICATE SESSIONS
 function [curr_sessions, pairCounterDup, duplicateLog] = removeDuplicates(curr_sessions, pairCounterDup, duplicateLog)
-    startTimes = curr_sessions.DeviceDtTm;
+    startTimes = curr_sessions.UTCDtTm;
     activity   = curr_sessions.CleanActivityName;
 
+    rowsToRemove = [];
     if height(curr_sessions) > 1
         deltaT       = minutes(diff(startTimes));
         sameActivity = strcmp(activity(1:end-1), activity(2:end));
         isDuplicate  = sameActivity & deltaT < 5;
-
         dupIdx       = find(isDuplicate);
-        rowsToRemove = [];
-
-        for k = dupIdx'
+        
+        for idx = 1:length(dupIdx)
+            k = dupIdx(idx);
             pairCounterDup = pairCounterDup + 1;
 
             row1 = curr_sessions(k,:);
@@ -108,7 +151,7 @@ end
 
 % REMOVE CONTAINED SESSIONS
 function [curr_sessions, pairCounterContained, containedLog] = removeContainedSessions(curr_sessions, pairCounterContained, containedLog)
-    startTimes = curr_sessions.DeviceDtTm;
+    startTimes = curr_sessions.UTCDtTm;
     validDuration = ~isnan(curr_sessions.DurationValue);
     endTimes = startTimes;
     endTimes(validDuration) = startTimes(validDuration) + minutes(curr_sessions.DurationValue(validDuration));
@@ -148,7 +191,7 @@ end
 
 % HANDLE PARTIAL OVERLAP (PER ORA TENGO SOLO LA PRIMA SESSIONE)
 function [curr_sessions, pairCounterOverlap, overlapLog] = handlePartialOverlap(curr_sessions, pairCounterOverlap, overlapLog)
-    startTimes = curr_sessions.DeviceDtTm;
+    startTimes = curr_sessions.UTCDtTm;
     validDuration = ~isnan(curr_sessions.DurationValue);
     endTimes = startTimes;
     endTimes(validDuration) = startTimes(validDuration) + minutes(curr_sessions.DurationValue(validDuration));

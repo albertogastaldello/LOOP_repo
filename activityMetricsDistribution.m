@@ -23,3 +23,7 @@ title('ACWR distribution')
 
 figure()
 histogram(exerciseTableForBN.MET)
+
+%%
+% Export to CSV
+% writetable(exerciseTableForBN(:, {'AOB', 'CWL', 'ACWR'}), 'workload_data.csv');

@@ -1,19 +1,19 @@
-function adjustAndSaveDataTables(code_path)
+function adjustAndSaveDataTables(code_path, base_path)
 
     % open Data Tables
     
-    adverseEvents = readtable("Data Tables/adverseEvents.txt");
-    deviceIssues = readtable("Data Tables/deviceIssues.txt");
-    gluIndices = readtable("Data Tables/gluIndices.txt");
-    BGM = readtable("Data Tables/LOOPDeviceBGM.txt");
-    exercise = readtable("Data Tables/LOOPDeviceExercise.txt");
-    food = readtable("Data Tables/LOOPDeviceFood.txt");
-    deviceIssueRpt = readtable("Data Tables/LOOPDeviceIssueRpt.txt");
-    wizard = readtable("Data Tables/LOOPDeviceWizard.txt");
-    finalStatus = readtable("Data Tables/LOOPPtFinalStatus.txt");
-    roster = readtable("Data Tables/PtRoster.txt");
-    sampleResults = readtable("Data Tables/SampleResults.txt");
-    surveys = readtable("Data Tables/Surveys.txt");
+    adverseEvents  = readtable(fullfile(base_path, 'Data Tables', 'adverseEvents.txt'));
+    deviceIssues   = readtable(fullfile(base_path, 'Data Tables', 'deviceIssues.txt'));
+    gluIndices     = readtable(fullfile(base_path, 'Data Tables', 'gluIndices.txt'));
+    BGM            = readtable(fullfile(base_path, 'Data Tables', 'LOOPDeviceBGM.txt'));
+    exercise       = readtable(fullfile(base_path, 'Data Tables', 'LOOPDeviceExercise.txt'));
+    food           = readtable(fullfile(base_path, 'Data Tables', 'LOOPDeviceFood.txt'));
+    deviceIssueRpt = readtable(fullfile(base_path, 'Data Tables', 'LOOPDeviceIssueRpt.txt'));
+    wizard         = readtable(fullfile(base_path, 'Data Tables', 'LOOPDeviceWizard.txt'));
+    finalStatus    = readtable(fullfile(base_path, 'Data Tables', 'LOOPPtFinalStatus.txt'));
+    roster         = readtable(fullfile(base_path, 'Data Tables', 'PtRoster.txt'));
+    sampleResults  = readtable(fullfile(base_path, 'Data Tables', 'SampleResults.txt'));
+    surveys        = readtable(fullfile(base_path, 'Data Tables', 'Surveys.txt'));
     
     % extract and save time zone offset of each subject
     
@@ -44,7 +44,7 @@ function adjustAndSaveDataTables(code_path)
     common_subjectsID = load("common_subjectsID_numeric.mat").common_subjectsID_numeric;
     n_common_subjects = length(common_subjectsID);
     
-    base_path = '/Users/albertogastaldello/Desktop/LOOP_Data/Loop study public dataset 2023-01-31/DataTablesCommonSubjects';
+    base_path = '/Users/albertogastaldello/Desktop/PAxT1D_BN/LOOP_Data/Loop study public dataset 2023-01-31/DataTablesCommonSubjects';
     
     dataTables = {
         "adverseEvents",   "subjectID";
