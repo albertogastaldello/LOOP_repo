@@ -20,8 +20,12 @@ function exerciseWithWearableData()
     exercise_valid.ACWR = zeros(0,1);
     exercise_valid.insulinData = {};           % cell for insulin struct
     exercise_valid.cgmData     = {};           % cell for CGM struct
-    exercise_valid.mealData    = {};           % cell for meal table
+    exercise_valid.reportedMealData = {};           % cell for meal table
+    exercise_valid.finalMealData = {};
     exercise_valid.COB = zeros(0,1);
+
+    hoursPreExercise = 8;
+    hoursPostExercise = 6;
 
     
     % COB curve
@@ -31,8 +35,19 @@ function exerciseWithWearableData()
 
     tau = 600; % AOB decay constant, 600 minutes (10 hours)
     
+    fewCgmData_counter = 0;
+    shortSessions_counter = 0;
+
     % Loop over subjects
     for i = 1:length(subjectsID)
+        
+        % UNCOMMENT IF YOU WANT JUST TO VISUALIZE SOME EXAMPLES OF FEW CGM
+        % DATA TRACES WITHOUT RUNNING THE ENTIRE LOOP
+        
+        % if(fewCgmData_counter > 10)
+        %     break
+        % end
+
         disp(['Processing subject ' num2str(i) ' of ' num2str(length(subjectsID))]);
         
         curr_subjID = subjectsID(i);
@@ -72,13 +87,20 @@ function exerciseWithWearableData()
         for j = 1:height(curr_exercise)
             
             curr_session = curr_exercise(j,:);
+
+            % remove sessions that last less than 5 minutes
+            curr_sessionDuration = curr_session.DurationValue;
+            if curr_sessionDuration < 5
+                shortSessions_counter = shortSessions_counter + 1;
+                continue
+            end
             
             startExercise = curr_session.UTCDtTm;
             exerciseDuration = curr_session.DurationValue;
             endExercise   = startExercise + minutes(exerciseDuration);
             
-            preExercise   = startExercise - hours(6);
-            postExercise  = endExercise + hours(6);
+            preExercise   = startExercise - hours(hoursPreExercise);
+            postExercise  = endExercise + hours(hoursPostExercise);
 
             % -------- ACUTE:CHRONIC WORKLOAD RATIO ---------
             
@@ -95,13 +117,40 @@ function exerciseWithWearableData()
                 cgm_data.datetime <= startExercise;
             idxPost = cgm_data.datetime >= endExercise & ...
                 cgm_data.datetime <= postExercise;
+
+            maxSamples_preExercise = (hoursPreExercise * 60) / 5;
+            maxSamples_postExercise = (hoursPostExercise * 60) / 5;
             
             % Minimum number of points
             % if sum(idxPre) < 0.85 * 72 || sum(idxExercise) < 3 || ...
             %         sum(idxPost) < 0.85 * 72
-            if sum(idxPre) < 0.85 * 72 || sum(idxExercise) < 0.85 * exerciseDuration/5 ...
-                    || sum(idxPost) < 0.85 * 72
+            if sum(idxPre) < 0.85 * maxSamples_preExercise || ...
+                    sum(idxExercise) < 0.85 * floor(exerciseDuration/5) ...
+                    || sum(idxPost) < 0.85 * maxSamples_postExercise
+                fewCgmData_counter = fewCgmData_counter + 1;
+                % UNCOMMENT TO VISUALIZE SOME EXAMPLES OF FEW CGM DATA
+                % TRACES
+
+                % fewCgmData_counter = fewCgmData_counter +1;
+                % if(fewCgmData_counter <= 10)
+                %     figure()
+                %     plot(cgm_data.datetime(idxPre), cgm_data.cgm(idxPre), 'r')
+                %     hold on
+                %     plot(cgm_data.datetime(idxExercise), cgm_data.cgm(idxExercise), 'g')
+                %     hold on
+                %     plot(cgm_data.datetime(idxPost), cgm_data.cgm(idxPost), 'b')
+                % 
+                %     nPre = sum(idxPre);
+                %     nDuring = sum(idxExercise);
+                %     nPost = sum(idxPost);
+                % 
+                %     title(['Samples Available: Pre ' num2str(nPre) ' / 72 | During: '...
+                %        num2str(nDuring) '/ ' num2str(exerciseDuration/5) ' | Post: '...
+                %        num2str(nPost) '/ 72']);
+                % 
+                % end
                 continue
+
             end
             
             % -------- BUILD TIMETABLES --------
@@ -138,15 +187,22 @@ function exerciseWithWearableData()
             
             % -------- MEAL DATA --------
             
-            preMeal  = startExercise - hours(6);
-            postMeal = endExercise + hours(6);
+            preMeal  = startExercise - hours(hoursPreExercise);
+            postMeal = endExercise + hours(hoursPostExercise);
             
             idxMeal = curr_subjectMealData.UTCDtTm >= preMeal & ...
                 curr_subjectMealData.UTCDtTm <= postMeal;
             sessionMealData = curr_subjectMealData(idxMeal,:);
-    
-            mealTimes = sessionMealData.UTCDtTm;
-            mealCHO = sessionMealData.CarbsNet;
+
+            % meals alignment and detection
+            cgmTotal = vertcat(cgmPreExercise_table, cgmExercise_table, cgmPostExercise_table);
+            curr_finalMeals = alignAndDetectMeals(cgmTotal, sessionMealData, curr_CF, curr_CR, curr_session.weight);
+            mealTimes = curr_finalMeals.UTCDtTm;
+            mealCHO = curr_finalMeals.CarbsNet;
+
+
+            % mealTimes = sessionMealData.UTCDtTm;
+            % mealCHO = sessionMealData.CarbsNet;
     
             timeDiff = minutes(startExercise - mealTimes);
             cobMeals = timeDiff >= 0 & timeDiff <= 360;
@@ -171,7 +227,8 @@ function exerciseWithWearableData()
                 'cgmExercise',cgmExercise_table, ...
                 'cgmPostExercise',cgmPostExercise_table)};
             
-            curr_session.mealData = {sessionMealData};
+            curr_session.reportedMealData = {sessionMealData};
+            curr_session.finalMealData = {curr_finalMeals};
     
             curr_session.COB = total_cob;
             
@@ -182,6 +239,10 @@ function exerciseWithWearableData()
     
     % Optional: trim unused preallocated rows
     exercise_valid = exercise_valid(1:counter,:);
+
+    % disp removed sessions counters
+    disp(['short sessions: ' num2str(shortSessions_counter)])
+    disp(['few cgm data sessions: ' num2str(fewCgmData_counter)])
     
     % save
     tables_path = '/Users/albertogastaldello/Desktop/PAxT1D_BN/LOOP_repo/tables/';

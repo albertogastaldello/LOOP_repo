@@ -62,17 +62,30 @@ function exerciseForBN()
         exerciseGlucoseRoc = exerciseGlucoseExcursion / ...
             minutes(curr_session.cgmData{1,1}.cgmExercise.Time(end) - ...
             curr_session.cgmData{1,1}.cgmExercise.Time(1));
+
+        cgmPostExercise = curr_session.cgmData{1,1}.cgmPostExercise;
+        
+        sessionDuration = curr_session.DurationValue;
+        endSession = startSession + minutes(sessionDuration);
+
+        postSession_6hours = endSession + hours(6);
+        idx6HoursPostSession = find(cgmPostExercise.Time >= postSession_6hours, 1, 'first');
+
+        if isempty(idx6HoursPostSession)
+            idx6HoursPostSession = size(cgmPostExercise,1);
+        end
+
+        glucose6HoursPostExercise = cgmPostExercise.Glucose(1:idx6HoursPostSession);
     
         % minimum glucose value reached in the post exercise (6h after end)
-        cgmPostExercise = curr_session.cgmData{1,1}.cgmPostExercise;
-        minGlucosePostExercise = min(cgmPostExercise.Glucose);
+        minGlucosePostExercise = min(glucose6HoursPostExercise);
     
         % time in range in the post exercise (6h after end)
-        idx_TIR = find(cgmPostExercise.Glucose >= 70 & cgmPostExercise.Glucose <= 180);
-        postExerciseTIR = (length(idx_TIR)/height(cgmPostExercise))*100;
+        idx_TIR = find(glucose6HoursPostExercise >= 70 & glucose6HoursPostExercise <= 180);
+        postExerciseTIR = (length(idx_TIR)/height(glucose6HoursPostExercise))*100;
     
         % glucose CV in the post exercise (6h after end)
-        postExerciseGlucoseCV = (std(cgmPostExercise.Glucose) / mean(cgmPostExercise.Glucose)) * 100;
+        postExerciseGlucoseCV = (std(glucose6HoursPostExercise) / mean(glucose6HoursPostExercise)) * 100;
     
         % add metrics
         curr_session.exerciseGlucoseExcursion = exerciseGlucoseExcursion;

@@ -52,8 +52,8 @@
 
 
 # 10. exerciseWithWearableData.m to load exerciseTable_filtered.mat, 
-# remove exercise sessions that last less than 15 minutes, and add 
-# wearable data around each exercise session (cgm, insulin, meals). 
+# remove exercise sessions that last less than 5 minutes and that have few 
+# cgm data, and add wearable data around each exercise session (cgm, insulin, meals). 
 # The table is saved as exerciseTableWithWearableData.mat
 
 
