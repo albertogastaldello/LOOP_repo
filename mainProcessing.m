@@ -106,3 +106,9 @@ disp('exerciseForBN');
 
 exerciseForBN();
 
+%% 11. convert exerciseTableForBN.mat in a table usable in python
+
+disp('exerciseForBN for Python');
+
+exerciseForBN_python();
+

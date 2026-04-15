@@ -34,8 +34,15 @@ ylabel('Glucose concentration (mg/dl)')
 hold on
 yyaxis right
 stem(curr_reportedMeal.UTCDtTm, curr_reportedMeal.CarbsNet, 'b')
-xline(exerciseStart, 'LineWidth', 2)
-xline(exerciseEnd, 'LineWidth', 2)
+ylabel('Carbohydrates (g)')
+xlabel('Time')
+xl1 = xline(exerciseStart, 'LineWidth', 2);
+xl2 = xline(exerciseEnd, 'LineWidth', 2);
+xl1.DisplayName = 'Exercise';
+xl2.Annotation.LegendInformation.IconDisplayStyle = 'off';  
+
+
+legend(xl1, {'Exercise'});
 
 subplot(2,1,2);
 yyaxis left
@@ -44,9 +51,15 @@ ylabel('Glucose concentration (mg/dl)')
 hold on
 yyaxis right
 stem(curr_finalMeal.UTCDtTm, curr_finalMeal.CarbsNet, 'r')
-xlabel('Carbohydrates (g)')
-xline(exerciseStart, 'LineWidth', 2)
-xline(exerciseEnd, 'LineWidth', 2)
+ylabel('Carbohydrates (g)')
+xlabel('Time')
+
+xl1 = xline(exerciseStart, 'LineWidth', 2);
+xl2 = xline(exerciseEnd, 'LineWidth', 2);
+xl1.DisplayName = 'Exercise';
+xl2.Annotation.LegendInformation.IconDisplayStyle = 'off';   
+
+legend(xl1, {'Exercise'});
 
 ax = findall(gcf,'type','axes');
 linkaxes(ax,'xy')

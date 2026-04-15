@@ -61,6 +61,9 @@
 # metrics useful for the developing of Bayesian Network. 
 # The table is saved as exerciseTableForBN.mat
 
+# 12. exerciseForBN_python.m to convert exerciseTableForBN.mat in a table 
+# that can be used in Python. The file is saved as exerciseTableForBN_python.parquet
+
 
 # -------------------------------------------------------------------
 # AUXILIARY SCRIPTS TO PERFORM ANALYSIS OR GENERAL OVERVIEW

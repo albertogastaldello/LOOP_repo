@@ -44,9 +44,9 @@ function exerciseWithWearableData()
         % UNCOMMENT IF YOU WANT JUST TO VISUALIZE SOME EXAMPLES OF FEW CGM
         % DATA TRACES WITHOUT RUNNING THE ENTIRE LOOP
         
-        % if(fewCgmData_counter > 10)
-        %     break
-        % end
+        if(fewCgmData_counter > 10)
+            break
+        end
 
         disp(['Processing subject ' num2str(i) ' of ' num2str(length(subjectsID))]);
         
@@ -128,27 +128,29 @@ function exerciseWithWearableData()
                     sum(idxExercise) < 0.85 * floor(exerciseDuration/5) ...
                     || sum(idxPost) < 0.85 * maxSamples_postExercise
                 fewCgmData_counter = fewCgmData_counter + 1;
+
+
                 % UNCOMMENT TO VISUALIZE SOME EXAMPLES OF FEW CGM DATA
                 % TRACES
 
-                % fewCgmData_counter = fewCgmData_counter +1;
-                % if(fewCgmData_counter <= 10)
-                %     figure()
-                %     plot(cgm_data.datetime(idxPre), cgm_data.cgm(idxPre), 'r')
-                %     hold on
-                %     plot(cgm_data.datetime(idxExercise), cgm_data.cgm(idxExercise), 'g')
-                %     hold on
-                %     plot(cgm_data.datetime(idxPost), cgm_data.cgm(idxPost), 'b')
-                % 
-                %     nPre = sum(idxPre);
-                %     nDuring = sum(idxExercise);
-                %     nPost = sum(idxPost);
-                % 
-                %     title(['Samples Available: Pre ' num2str(nPre) ' / 72 | During: '...
-                %        num2str(nDuring) '/ ' num2str(exerciseDuration/5) ' | Post: '...
-                %        num2str(nPost) '/ 72']);
-                % 
-                % end
+                if(fewCgmData_counter <= 10)
+                    figure()
+                    plot(cgm_data.datetime(idxPre), cgm_data.cgm(idxPre), 'r')
+                    hold on
+                    plot(cgm_data.datetime(idxExercise), cgm_data.cgm(idxExercise), 'g')
+                    hold on
+                    plot(cgm_data.datetime(idxPost), cgm_data.cgm(idxPost), 'b')
+
+                    nPre = sum(idxPre);
+                    nDuring = sum(idxExercise);
+                    nPost = sum(idxPost);
+
+                    title(['Samples Available: Pre ' num2str(nPre) ' / '...
+                       num2str(maxSamples_preExercise) ' | During: '...
+                       num2str(nDuring) '/ ' num2str(exerciseDuration/5)...
+                       ' | Post: ' num2str(nPost) '/ ' num2str(maxSamples_postExercise)]);
+
+                end
                 continue
 
             end
