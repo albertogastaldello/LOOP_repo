@@ -1,0 +1,287 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="360pt" height="138pt" viewBox="0.00 0.00 360.00 138.00">
+<g id="graph0" class="graph" transform="scale(0.267118 0.267118) rotate(0) translate(4 511.05)">
+<title>ExpertCausalModel</title>
+<!-- gender -->
+<g id="node1" class="node">
+<title>gender</title>
+<ellipse fill="#0072b2" stroke="#4a4a4a" cx="539.19" cy="-486.26" rx="39.88" ry="20.79"/>
+<text xml:space="preserve" text-anchor="middle" x="539.19" y="-480.46" font-family="Helvetica,sans-Serif" font-size="14.00" fill="white">gender</text>
+</g>
+<!-- InsCarbRatio -->
+<g id="node3" class="node">
+<title>InsCarbRatio</title>
+<ellipse fill="#0072b2" stroke="#4a4a4a" cx="847.19" cy="-175.94" rx="65.87" ry="20.79"/>
+<text xml:space="preserve" text-anchor="middle" x="847.19" y="-170.14" font-family="Helvetica,sans-Serif" font-size="14.00" fill="white">InsCarbRatio</text>
+</g>
+<!-- gender&#45;&gt;InsCarbRatio -->
+<g id="edge28" class="edge">
+<title>gender-&gt;InsCarbRatio</title>
+<path fill="none" stroke="#4a4a4a" d="M531.61,-465.54C519.97,-431.96 501.41,-362.26 525.19,-310.31 566.91,-219.14 689.54,-190.12 770.84,-180.99"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="770.94,-184.5 780.52,-179.98 770.22,-177.54 770.94,-184.5"/>
+</g>
+<!-- HbA1c -->
+<g id="node10" class="node">
+<title>HbA1c</title>
+<ellipse fill="#0072b2" stroke="#4a4a4a" cx="731.19" cy="-253.52" rx="38.82" ry="20.79"/>
+<text xml:space="preserve" text-anchor="middle" x="731.19" y="-247.72" font-family="Helvetica,sans-Serif" font-size="14.00" fill="white">HbA1c</text>
+</g>
+<!-- gender&#45;&gt;HbA1c -->
+<g id="edge25" class="edge">
+<title>gender-&gt;HbA1c</title>
+<path fill="none" stroke="#4a4a4a" d="M541.12,-465.01C545.43,-424.05 557.02,-333.25 577.19,-310.31 608.65,-274.52 633.42,-290.65 678.19,-274.31 681.8,-272.99 685.55,-271.61 689.31,-270.22"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="690.25,-273.61 698.41,-266.85 687.81,-267.05 690.25,-273.61"/>
+</g>
+<!-- InsSensitivity -->
+<g id="node12" class="node">
+<title>InsSensitivity</title>
+<ellipse fill="#0072b2" stroke="#4a4a4a" cx="652.19" cy="-331.1" rx="65.87" ry="20.79"/>
+<text xml:space="preserve" text-anchor="middle" x="652.19" y="-325.3" font-family="Helvetica,sans-Serif" font-size="14.00" fill="white">InsSensitivity</text>
+</g>
+<!-- gender&#45;&gt;InsSensitivity -->
+<g id="edge8" class="edge">
+<title>gender-&gt;InsSensitivity</title>
+<path fill="none" stroke="#4a4a4a" d="M553.04,-466.48C572.59,-439.98 608.42,-391.42 631.23,-360.5"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="633.84,-362.86 636.96,-352.74 628.21,-358.7 633.84,-362.86"/>
+</g>
+<!-- IOB -->
+<g id="node13" class="node">
+<title>IOB</title>
+<ellipse fill="#e69f00" stroke="#4a4a4a" cx="642.19" cy="-253.52" rx="27.15" ry="20.79"/>
+<text xml:space="preserve" text-anchor="middle" x="642.19" y="-247.72" font-family="Helvetica,sans-Serif" font-size="14.00">IOB</text>
+</g>
+<!-- gender&#45;&gt;IOB -->
+<g id="edge20" class="edge">
+<title>gender-&gt;IOB</title>
+<path fill="none" stroke="#4a4a4a" d="M533.89,-465.42C525.92,-431.05 514.69,-359.41 544.19,-310.31 557.73,-287.77 584.03,-273.53 605.98,-265.08"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="606.98,-268.44 615.23,-261.79 604.63,-261.84 606.98,-268.44"/>
+</g>
+<!-- ACWR -->
+<g id="node14" class="node">
+<title>ACWR</title>
+<ellipse fill="#d55e00" stroke="#4a4a4a" cx="726.19" cy="-98.37" rx="39.88" ry="20.79"/>
+<text xml:space="preserve" text-anchor="middle" x="726.19" y="-92.57" font-family="Helvetica,sans-Serif" font-size="14.00" fill="white">ACWR</text>
+</g>
+<!-- gender&#45;&gt;ACWR -->
+<g id="edge17" class="edge">
+<title>gender-&gt;ACWR</title>
+<path fill="none" stroke="#4a4a4a" d="M519.5,-468.1C491.68,-441.85 444.19,-388.73 444.19,-332.1 444.19,-332.1 444.19,-332.1 444.19,-252.52 444.19,-225.39 607.53,-150.84 685.59,-116.77"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="686.84,-120.04 694.62,-112.84 684.05,-113.62 686.84,-120.04"/>
+</g>
+<!-- BMI -->
+<g id="node15" class="node">
+<title>BMI</title>
+<ellipse fill="#0072b2" stroke="#4a4a4a" cx="805.19" cy="-408.68" rx="27.68" ry="20.79"/>
+<text xml:space="preserve" text-anchor="middle" x="805.19" y="-402.88" font-family="Helvetica,sans-Serif" font-size="14.00" fill="white">BMI</text>
+</g>
+<!-- gender&#45;&gt;BMI -->
+<g id="edge27" class="edge">
+<title>gender-&gt;BMI</title>
+<path fill="none" stroke="#4a4a4a" d="M573.69,-475.45C624,-461.16 717.11,-434.7 768.58,-420.08"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="769.39,-423.49 778.06,-417.39 767.48,-416.75 769.39,-423.49"/>
+</g>
+<!-- preExerciseRoc -->
+<g id="node2" class="node">
+<title>preExerciseRoc</title>
+<ellipse fill="#e69f00" stroke="#4a4a4a" cx="1262.19" cy="-486.26" rx="77.53" ry="20.79"/>
+<text xml:space="preserve" text-anchor="middle" x="1262.19" y="-480.46" font-family="Helvetica,sans-Serif" font-size="14.00">preExerciseRoc</text>
+</g>
+<!-- MET_min -->
+<g id="node5" class="node">
+<title>MET_min</title>
+<ellipse fill="#d55e00" stroke="#4a4a4a" cx="847.19" cy="-98.37" rx="52.08" ry="20.79"/>
+<text xml:space="preserve" text-anchor="middle" x="847.19" y="-92.57" font-family="Helvetica,sans-Serif" font-size="14.00" fill="white">MET_min</text>
+</g>
+<!-- InsCarbRatio&#45;&gt;MET_min -->
+<g id="edge26" class="edge">
+<title>InsCarbRatio-&gt;MET_min</title>
+<path fill="none" stroke="#4a4a4a" d="M847.19,-154.69C847.19,-147.35 847.19,-138.87 847.19,-130.79"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="850.69,-130.93 847.19,-120.93 843.69,-130.93 850.69,-130.93"/>
+</g>
+<!-- InsCarbRatio&#45;&gt;ACWR -->
+<g id="edge19" class="edge">
+<title>InsCarbRatio-&gt;ACWR</title>
+<path fill="none" stroke="#4a4a4a" d="M818.2,-156.84C800.98,-146.08 779.02,-132.37 760.88,-121.04"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="762.87,-118.15 752.53,-115.82 759.16,-124.09 762.87,-118.15"/>
+</g>
+<!-- postExerciseTIR -->
+<g id="node4" class="node">
+<title>postExerciseTIR</title>
+<ellipse fill="#009e73" stroke="#4a4a4a" cx="80.19" cy="-98.37" rx="80.19" ry="20.79"/>
+<text xml:space="preserve" text-anchor="middle" x="80.19" y="-92.57" font-family="Helvetica,sans-Serif" font-size="14.00" fill="white">postExerciseTIR</text>
+</g>
+<!-- exerciseGlucoseRoc -->
+<g id="node9" class="node">
+<title>exerciseGlucoseRoc</title>
+<ellipse fill="#009e73" stroke="#4a4a4a" cx="847.19" cy="-20.79" rx="98.22" ry="20.79"/>
+<text xml:space="preserve" text-anchor="middle" x="847.19" y="-14.99" font-family="Helvetica,sans-Serif" font-size="14.00" fill="white">exerciseGlucoseRoc</text>
+</g>
+<!-- MET_min&#45;&gt;exerciseGlucoseRoc -->
+<g id="edge18" class="edge">
+<title>MET_min-&gt;exerciseGlucoseRoc</title>
+<path fill="none" stroke="#4a4a4a" d="M847.19,-77.11C847.19,-69.77 847.19,-61.29 847.19,-53.21"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="850.69,-53.35 847.19,-43.35 843.69,-53.35 850.69,-53.35"/>
+</g>
+<!-- startExerciseGlucoseLevel -->
+<g id="node6" class="node">
+<title>startExerciseGlucoseLevel</title>
+<ellipse fill="#e69f00" stroke="#4a4a4a" cx="292.19" cy="-175.94" rx="123.67" ry="20.79"/>
+<text xml:space="preserve" text-anchor="middle" x="292.19" y="-170.14" font-family="Helvetica,sans-Serif" font-size="14.00">startExerciseGlucoseLevel</text>
+</g>
+<!-- startExerciseGlucoseLevel&#45;&gt;postExerciseTIR -->
+<g id="edge4" class="edge">
+<title>startExerciseGlucoseLevel-&gt;postExerciseTIR</title>
+<path fill="none" stroke="#4a4a4a" d="M240.87,-156.65C209.49,-145.46 169.31,-131.14 136.98,-119.61"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="138.36,-116.39 127.76,-116.33 136.01,-122.98 138.36,-116.39"/>
+</g>
+<!-- postExerciseGlucoseCV -->
+<g id="node11" class="node">
+<title>postExerciseGlucoseCV</title>
+<ellipse fill="#009e73" stroke="#4a4a4a" cx="292.19" cy="-98.37" rx="113.6" ry="20.79"/>
+<text xml:space="preserve" text-anchor="middle" x="292.19" y="-92.57" font-family="Helvetica,sans-Serif" font-size="14.00" fill="white">postExerciseGlucoseCV</text>
+</g>
+<!-- startExerciseGlucoseLevel&#45;&gt;postExerciseGlucoseCV -->
+<g id="edge24" class="edge">
+<title>startExerciseGlucoseLevel-&gt;postExerciseGlucoseCV</title>
+<path fill="none" stroke="#4a4a4a" d="M292.19,-154.69C292.19,-147.35 292.19,-138.87 292.19,-130.79"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="295.69,-130.93 292.19,-120.93 288.69,-130.93 295.69,-130.93"/>
+</g>
+<!-- minGlucosePostExercise -->
+<g id="node16" class="node">
+<title>minGlucosePostExercise</title>
+<ellipse fill="#009e73" stroke="#4a4a4a" cx="541.19" cy="-98.37" rx="117.31" ry="20.79"/>
+<text xml:space="preserve" text-anchor="middle" x="541.19" y="-92.57" font-family="Helvetica,sans-Serif" font-size="14.00" fill="white">minGlucosePostExercise</text>
+</g>
+<!-- startExerciseGlucoseLevel&#45;&gt;minGlucosePostExercise -->
+<g id="edge16" class="edge">
+<title>startExerciseGlucoseLevel-&gt;minGlucosePostExercise</title>
+<path fill="none" stroke="#4a4a4a" d="M350.57,-157.23C387.22,-146.1 434.66,-131.7 473.03,-120.05"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="473.6,-123.54 482.15,-117.28 471.57,-116.84 473.6,-123.54"/>
+</g>
+<!-- preExerciseGlucoseCV -->
+<g id="node7" class="node">
+<title>preExerciseGlucoseCV</title>
+<ellipse fill="#e69f00" stroke="#4a4a4a" cx="964.19" cy="-331.1" rx="109.35" ry="20.79"/>
+<text xml:space="preserve" text-anchor="middle" x="964.19" y="-325.3" font-family="Helvetica,sans-Serif" font-size="14.00">preExerciseGlucoseCV</text>
+</g>
+<!-- age -->
+<g id="node8" class="node">
+<title>age</title>
+<ellipse fill="#0072b2" stroke="#4a4a4a" cx="1139.19" cy="-486.26" rx="27" ry="20.79"/>
+<text xml:space="preserve" text-anchor="middle" x="1139.19" y="-480.46" font-family="Helvetica,sans-Serif" font-size="14.00" fill="white">age</text>
+</g>
+<!-- age&#45;&gt;InsCarbRatio -->
+<g id="edge9" class="edge">
+<title>age-&gt;InsCarbRatio</title>
+<path fill="none" stroke="#4a4a4a" d="M1143.89,-465.53C1147.83,-445.62 1151.84,-414.16 1145.19,-387.89 1125.66,-310.83 1119.79,-280.43 1056.19,-232.73 1017.57,-203.78 965.06,-189.83 922.33,-183.13"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="923.02,-179.69 912.62,-181.72 922.01,-186.62 923.02,-179.69"/>
+</g>
+<!-- age&#45;&gt;MET_min -->
+<g id="edge5" class="edge">
+<title>age-&gt;MET_min</title>
+<path fill="none" stroke="#4a4a4a" d="M1160.39,-473.24C1185.51,-458.85 1224.54,-435.86 1229.19,-429.47 1255.4,-393.42 1253.19,-376.67 1253.19,-332.1 1253.19,-332.1 1253.19,-332.1 1253.19,-252.52 1253.19,-207.95 1262.19,-185.11 1229.19,-155.16 1183.64,-113.82 1007.05,-103.08 910.73,-100.31"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="911,-96.82 900.91,-100.05 910.81,-103.81 911,-96.82"/>
+</g>
+<!-- age&#45;&gt;HbA1c -->
+<g id="edge7" class="edge">
+<title>age-&gt;HbA1c</title>
+<path fill="none" stroke="#4a4a4a" d="M1139.01,-465.1C1137.52,-428.22 1128.71,-350.03 1082.19,-310.31 1037.83,-272.44 867.55,-260.08 781.53,-256.2"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="781.88,-252.71 771.74,-255.78 781.58,-259.71 781.88,-252.71"/>
+</g>
+<!-- age&#45;&gt;InsSensitivity -->
+<g id="edge21" class="edge">
+<title>age-&gt;InsSensitivity</title>
+<path fill="none" stroke="#4a4a4a" d="M1111.7,-486.09C1048.17,-486.99 887.52,-483.3 768.19,-429.47 732.06,-413.17 698.26,-382.31 676.57,-359.68"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="679.29,-357.47 669.9,-352.56 674.18,-362.26 679.29,-357.47"/>
+</g>
+<!-- age&#45;&gt;ACWR -->
+<g id="edge23" class="edge">
+<title>age-&gt;ACWR</title>
+<path fill="none" stroke="#4a4a4a" d="M1153.84,-468.69C1175.92,-441.94 1215.19,-386.72 1215.19,-332.1 1215.19,-332.1 1215.19,-332.1 1215.19,-252.52 1215.19,-52.85 977.59,-176 786.19,-119.16 780.8,-117.56 775.17,-115.81 769.61,-114.03"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="771.12,-110.84 760.52,-111.08 768.95,-117.5 771.12,-110.84"/>
+</g>
+<!-- age&#45;&gt;BMI -->
+<g id="edge6" class="edge">
+<title>age-&gt;BMI</title>
+<path fill="none" stroke="#4a4a4a" d="M1113.26,-479.39C1054.43,-466.08 910.69,-433.55 842.39,-418.1"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="843.33,-414.72 832.81,-415.93 841.79,-421.55 843.33,-414.72"/>
+</g>
+<!-- HbA1c&#45;&gt;InsCarbRatio -->
+<g id="edge14" class="edge">
+<title>HbA1c-&gt;InsCarbRatio</title>
+<path fill="none" stroke="#4a4a4a" d="M755.22,-236.86C771.01,-226.58 791.99,-212.91 809.92,-201.23"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="811.78,-204.19 818.25,-195.8 807.96,-198.33 811.78,-204.19"/>
+</g>
+<!-- HbA1c&#45;&gt;MET_min -->
+<g id="edge12" class="edge">
+<title>HbA1c-&gt;MET_min</title>
+<path fill="none" stroke="#4a4a4a" d="M736.18,-232.62C742.16,-211.72 753.74,-178.68 772.19,-155.16 782.18,-142.41 795.77,-131.13 808.65,-122.1"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="810.22,-125.26 816.57,-116.78 806.32,-119.45 810.22,-125.26"/>
+</g>
+<!-- HbA1c&#45;&gt;startExerciseGlucoseLevel -->
+<g id="edge22" class="edge">
+<title>HbA1c-&gt;startExerciseGlucoseLevel</title>
+<path fill="none" stroke="#4a4a4a" d="M700.99,-239.98C693.63,-237.28 685.7,-234.66 678.19,-232.73 590.18,-210.22 488.42,-195.98 411.47,-187.53"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="412.13,-184.08 401.81,-186.49 411.38,-191.04 412.13,-184.08"/>
+</g>
+<!-- HbA1c&#45;&gt;ACWR -->
+<g id="edge2" class="edge">
+<title>HbA1c-&gt;ACWR</title>
+<path fill="none" stroke="#4a4a4a" d="M730.53,-232.5C729.69,-206.59 728.2,-161.15 727.21,-130.67"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="730.71,-130.79 726.89,-120.91 723.72,-131.02 730.71,-130.79"/>
+</g>
+<!-- InsSensitivity&#45;&gt;InsCarbRatio -->
+<g id="edge15" class="edge">
+<title>InsSensitivity-&gt;InsCarbRatio</title>
+<path fill="none" stroke="#4a4a4a" d="M699.64,-316.23C725.1,-307.16 755.92,-293.42 779.19,-274.31 801.68,-255.84 820.04,-228.14 831.99,-207"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="835.04,-208.71 836.76,-198.25 828.9,-205.35 835.04,-208.71"/>
+</g>
+<!-- InsSensitivity&#45;&gt;HbA1c -->
+<g id="edge13" class="edge">
+<title>InsSensitivity-&gt;HbA1c</title>
+<path fill="none" stroke="#4a4a4a" d="M672.12,-311.03C682,-301.57 694.07,-290.03 704.72,-279.84"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="706.98,-282.52 711.79,-273.08 702.14,-277.46 706.98,-282.52"/>
+</g>
+<!-- InsSensitivity&#45;&gt;IOB -->
+<g id="edge3" class="edge">
+<title>InsSensitivity-&gt;IOB</title>
+<path fill="none" stroke="#4a4a4a" d="M649.51,-309.85C648.53,-302.5 647.41,-294.02 646.34,-285.94"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="649.82,-285.52 645.04,-276.07 642.88,-286.44 649.82,-285.52"/>
+</g>
+<!-- BMI&#45;&gt;InsCarbRatio -->
+<g id="edge1" class="edge">
+<title>BMI-&gt;InsCarbRatio</title>
+<path fill="none" stroke="#4a4a4a" d="M832.77,-406.4C896.48,-402.8 1050.8,-390.23 1082.19,-351.89 1141.43,-279.52 994.32,-220.85 906.73,-193.54"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="907.87,-190.23 897.29,-190.65 905.82,-196.93 907.87,-190.23"/>
+</g>
+<!-- BMI&#45;&gt;preExerciseGlucoseCV -->
+<g id="edge30" class="edge">
+<title>BMI-&gt;preExerciseGlucoseCV</title>
+<path fill="none" stroke="#4a4a4a" d="M828.31,-396.69C850.78,-386.01 885.64,-369.43 914.43,-355.75"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="915.83,-358.96 923.36,-351.51 912.82,-352.64 915.83,-358.96"/>
+</g>
+<!-- BMI&#45;&gt;HbA1c -->
+<g id="edge29" class="edge">
+<title>BMI-&gt;HbA1c</title>
+<path fill="none" stroke="#4a4a4a" d="M790.84,-390.43C782.53,-379.81 772.33,-365.64 765.19,-351.89 754.2,-330.74 745.45,-305.25 739.57,-285.66"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="742.94,-284.69 736.79,-276.06 736.21,-286.64 742.94,-284.69"/>
+</g>
+<!-- BMI&#45;&gt;InsSensitivity -->
+<g id="edge11" class="edge">
+<title>BMI-&gt;InsSensitivity</title>
+<path fill="none" stroke="#4a4a4a" d="M782.28,-396.36C759.78,-385.25 724.86,-368 696.86,-354.17"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="698.77,-351.21 688.25,-349.92 695.67,-357.48 698.77,-351.21"/>
+</g>
+<!-- COB -->
+<g id="node17" class="node">
+<title>COB</title>
+<ellipse fill="#e69f00" stroke="#4a4a4a" cx="805.19" cy="-331.1" rx="31.4" ry="20.79"/>
+<text xml:space="preserve" text-anchor="middle" x="805.19" y="-325.3" font-family="Helvetica,sans-Serif" font-size="14.00">COB</text>
+</g>
+<!-- BMI&#45;&gt;COB -->
+<g id="edge10" class="edge">
+<title>BMI-&gt;COB</title>
+<path fill="none" stroke="#4a4a4a" d="M805.19,-387.42C805.19,-380.08 805.19,-371.6 805.19,-363.52"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" points="808.69,-363.66 805.19,-353.66 801.69,-363.66 808.69,-363.66"/>
+</g>
+</g>
+</svg>

@@ -16,13 +16,15 @@ function exerciseWithWearableData()
     % Preallocate exercise_valid table
     exercise_valid = exercise([],:);           % empty table with same columns
     exercise_valid.AOB = zeros(0,1);
-    exercise_valid.CWL = zeros(0,1);
+    exercise_valid.TotalCWL = zeros(0,1);
+    exercise_valid.CWLPerDay = zeros(0,1);
     exercise_valid.ACWR = zeros(0,1);
     exercise_valid.insulinData = {};           % cell for insulin struct
     exercise_valid.cgmData     = {};           % cell for CGM struct
     exercise_valid.reportedMealData = {};           % cell for meal table
     exercise_valid.finalMealData = {};
     exercise_valid.COB = zeros(0,1);
+    exercise_valid.COBnorm = zeros(0,1);
 
     hoursPreExercise = 8;
     hoursPostExercise = 6;
@@ -43,10 +45,10 @@ function exerciseWithWearableData()
         
         % UNCOMMENT IF YOU WANT JUST TO VISUALIZE SOME EXAMPLES OF FEW CGM
         % DATA TRACES WITHOUT RUNNING THE ENTIRE LOOP
-        
-        if(fewCgmData_counter > 10)
-            break
-        end
+        % 
+        % if(fewCgmData_counter > 10)
+        %     break
+        % end
 
         disp(['Processing subject ' num2str(i) ' of ' num2str(length(subjectsID))]);
         
@@ -104,9 +106,10 @@ function exerciseWithWearableData()
 
             % -------- ACUTE:CHRONIC WORKLOAD RATIO ---------
             
-            [aob, cwl, acwr] = computeACWR(curr_session, curr_exercise, tau);
+            [aob, total_cwl, cwl_per_day, acwr] = computeACWR(curr_session, curr_exercise, tau);
             curr_session.AOB = aob;
-            curr_session.CWL = cwl;
+            curr_session.TotalCWL = total_cwl;
+            curr_session.CWLPerDay = cwl_per_day;
             curr_session.ACWR = acwr;
             
             % -------- CGM WINDOWS --------
@@ -133,24 +136,24 @@ function exerciseWithWearableData()
                 % UNCOMMENT TO VISUALIZE SOME EXAMPLES OF FEW CGM DATA
                 % TRACES
 
-                if(fewCgmData_counter <= 10)
-                    figure()
-                    plot(cgm_data.datetime(idxPre), cgm_data.cgm(idxPre), 'r')
-                    hold on
-                    plot(cgm_data.datetime(idxExercise), cgm_data.cgm(idxExercise), 'g')
-                    hold on
-                    plot(cgm_data.datetime(idxPost), cgm_data.cgm(idxPost), 'b')
-
-                    nPre = sum(idxPre);
-                    nDuring = sum(idxExercise);
-                    nPost = sum(idxPost);
-
-                    title(['Samples Available: Pre ' num2str(nPre) ' / '...
-                       num2str(maxSamples_preExercise) ' | During: '...
-                       num2str(nDuring) '/ ' num2str(exerciseDuration/5)...
-                       ' | Post: ' num2str(nPost) '/ ' num2str(maxSamples_postExercise)]);
-
-                end
+                % if(fewCgmData_counter <= 10)
+                %     figure()
+                %     plot(cgm_data.datetime(idxPre), cgm_data.cgm(idxPre), 'r')
+                %     hold on
+                %     plot(cgm_data.datetime(idxExercise), cgm_data.cgm(idxExercise), 'g')
+                %     hold on
+                %     plot(cgm_data.datetime(idxPost), cgm_data.cgm(idxPost), 'b')
+                % 
+                %     nPre = sum(idxPre);
+                %     nDuring = sum(idxExercise);
+                %     nPost = sum(idxPost);
+                % 
+                %     title(['Samples Available: Pre ' num2str(nPre) ' / '...
+                %        num2str(maxSamples_preExercise) ' | During: '...
+                %        num2str(nDuring) '/ ' num2str(exerciseDuration/5)...
+                %        ' | Post: ' num2str(nPost) '/ ' num2str(maxSamples_postExercise)]);
+                % 
+                % end
                 continue
 
             end
@@ -177,6 +180,7 @@ function exerciseWithWearableData()
             [curr_CF, curr_CR, curr_tslb, curr_lb, ...
              curr_tslBasal, curr_lBasal, curr_IOB] = ...
                 getInsulinInfo(startExercise, curr_wizard, bolus_data, basal_data);
+            curr_IOB_normalized = curr_IOB * curr_CF;
             
             tmpInsulin = struct( ...
                 'InsSensitivity',curr_CF, ...
@@ -185,7 +189,8 @@ function exerciseWithWearableData()
                 'LastBolus',curr_lb, ...
                 'TimeSinceLastBasal',curr_tslBasal, ...
                 'LastBasal',curr_lBasal, ...
-                'IOB',curr_IOB);
+                'IOB',curr_IOB, ...
+                'IOBnorm', curr_IOB_normalized);
             
             % -------- MEAL DATA --------
             
@@ -217,6 +222,8 @@ function exerciseWithWearableData()
             t_curve = 0:359;
     
             total_cob = sum(CHO .* interp1(t_curve, f, dt, 'linear', 0));
+            weight = subjectsStruct.(struct_patientField).surveys.weight_kg(1);
+            cob_norm = total_cob / weight; 
             
             % -------- APPEND SESSION --------
             
@@ -233,6 +240,7 @@ function exerciseWithWearableData()
             curr_session.finalMealData = {curr_finalMeals};
     
             curr_session.COB = total_cob;
+            curr_session.COBnorm = cob_norm;
             
             exercise_valid(counter,:) = curr_session;
             
@@ -254,7 +262,7 @@ end
 
 % compute ACWR function
 
-function [aob, cwl, acwr] = computeACWR(curr_session, curr_exercise, tau)
+function [aob, total_cwl, cwl_per_day, acwr] = computeACWR(curr_session, curr_exercise, tau)
     
     % compute the load of current session as MET*duration
     % NB: NOT MET - 1 BECAUSE HEALTHKIT PROVIDES ACTIVE ENERGY VALUE, SO
@@ -294,8 +302,9 @@ function [aob, cwl, acwr] = computeACWR(curr_session, curr_exercise, tau)
             cwl = cwl + curr_cwl;
         end
     end
-
-    cwl = cwl/7; % average across 7 days
+        
+    cwl_per_day = cwl/7;
+    total_cwl = cwl; % average across 7 days
 
     % compute ACWR
     if cwl == 0
