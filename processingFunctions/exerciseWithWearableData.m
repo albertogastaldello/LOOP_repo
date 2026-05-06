@@ -2,7 +2,7 @@ function exerciseWithWearableData()
 
     % Load filtered exercise table
     exercise = load("exerciseTable_filtered.mat").exerciseTable_clean;
-    % exercise(exercise.DurationValue < 15, :) = [];
+    exercise(exercise.DurationValue < 10, :) = [];
     
     base_path = '/Users/albertogastaldello/Desktop/PAxT1D_BN/LOOP_Data/Loop study public dataset 2023-01-31';
     subjectsStruct = load("dataTablesStructure_withDateTime.mat").data_tables_all;
