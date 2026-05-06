@@ -27,6 +27,28 @@ function createExerciseTable(code_path, base_path)
     exercise_table = table();
 
     subjectsID = commonWizard_subjectsID_numeric;
+
+    % map for imputing MET values if EnergyValue is missing
+    compendiumKeys = {'Walking', 'Cycling', 'Running', 'Elliptical', 'Stairs', ...
+    'Swimming', 'Traditional Strength Training', 'High Intensity Interval Training', ...
+    'Functional Strength Training', 'Yoga', 'Hiking', 'StairClimbing', 'Dance', ...
+    'Downhill Skiing', 'Kick Boxing', 'Core Training', 'Mixed Cardio', 'Rowing', ...
+    'Preparation And Recovery', 'Play', 'Golf', 'PaddleSports', 'Hockey', ...
+    'Snow Sports', 'Volleyball', 'Racquetball', 'Pilates', 'Barre', ...
+    'Step Training', 'Soccer', 'Climbing', 'Mind And Body', 'Football', ...
+    'Snowboarding', 'Other Activity', 'Cross Training'};
+
+    compendiumValues = [3.5, 7.5, 9.8, 5.0, 8.0, ...
+        7.0, 5.0, 8.0, ...
+        5.0, 2.5, 6.0, 8.0, 5.0, ...
+        5.3, 7.0, 3.8, 6.0, 7.0, ...
+        2.0, 4.0, 4.3, 4.0, 8.0, ...
+        7.0, 4.0, 7.0, 3.0, 3.0, ...
+        7.0, 7.0, 8.0, 2.0, 8.0, ...
+        5.3, 4.0, 6.0];
+
+    metMap = containers.Map(compendiumKeys, compendiumValues);
+
     
     % Iterate for each subject in your cleaned struct
     for i=1:length(subjectsID)
@@ -81,7 +103,20 @@ function createExerciseTable(code_path, base_path)
             curr_weight = subjectsStruct.(struct_patientField).surveys.weight_kg(1);
             
             % (Assuming EnergyValue is Active Calories based on HealthKit)
+            
             curr_exercise.MET = curr_exercise.EnergyValue ./ (curr_weight * (curr_exercise.DurationValue ./ 60));
+
+            missingMET_idx = find(isnan(curr_exercise.MET));
+            for m = 1:length(missingMET_idx)
+                curr_missingMET_idx = missingMET_idx(m);
+                curr_exName = char(curr_exercise.CleanActivityName(curr_missingMET_idx));
+                if isKey(metMap, curr_exName)
+                    curr_exercise.MET(curr_missingMET_idx) = metMap(curr_exName);
+                else
+                    curr_exercise.MET(curr_missingMET_idx) = 4;
+                end
+            end
+
             curr_exercise.MET_min = curr_exercise.MET .* curr_exercise.DurationValue;
         
             % --- DEMOGRAPHICS & LABS ---

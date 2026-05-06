@@ -7,6 +7,79 @@ import matplotlib.pyplot as plt
 
 
 # ==========================================
+# MAP EXERCISE MODALITY
+# =========================================
+
+import pandas as pd
+
+def map_exercise_modality(df, activity_col_name="CleanActivityName"):
+    """
+    Maps raw string exercise names into physiological modalities 
+    to capture differing counter-regulatory hormone responses.
+    """
+    
+    modality_mapping = {
+        # 1. AEROBIC: Continuous oxidative phosphorylation. 
+        # Clinical Expectation: Rapid, linear drop in circulating blood glucose.
+        'Walking': 'Aerobic', 
+        'Cycling': 'Aerobic', 
+        'Running': 'Aerobic',
+        'Elliptical': 'Aerobic', 
+        'Stairs': 'Aerobic', 
+        'Swimming': 'Aerobic',
+        'Hiking': 'Aerobic', 
+        'StairClimbing': 'Aerobic', 
+        'Rowing': 'Aerobic',
+        'PaddleSports': 'Aerobic', 
+        'Step Training': 'Aerobic',
+
+        # 2. ANAEROBIC / RESISTANCE: High mechanical load, glycogen-driven.
+        # Clinical Expectation: Counter-regulatory hormone release, potential glucose spike.
+        'Traditional Strength Training': 'Anaerobic',
+        'Functional Strength Training': 'Anaerobic',
+        'Core Training': 'Anaerobic', 
+        'Pilates': 'Anaerobic', 
+        'Barre': 'Anaerobic',
+
+        # 3. MIXED MODALITY: Alternating high/low heart rate (Sports & Intervals).
+        # Clinical Expectation: Highly variable, often stabilizes glucose during, but drops later.
+        'High Intensity Interval Training': 'Mixed', 
+        'Cross Training': 'Mixed',
+        'Kick Boxing': 'Mixed', 
+        'Mixed Cardio': 'Mixed', 
+        'Mixed Metabolic Cardio Training': 'Mixed',
+        'Dance': 'Mixed', 
+        'Hockey': 'Mixed', 
+        'Soccer': 'Mixed',
+        'Football': 'Mixed', 
+        'Volleyball': 'Mixed', 
+        'Racquetball': 'Mixed', 
+        'Climbing': 'Mixed',
+        'Downhill Skiing': 'Mixed', 
+        'Snow Sports': 'Mixed', 
+        'Snowboarding': 'Mixed',
+        'Play': 'Mixed', 
+        'Golf': 'Mixed',
+
+        # 4. OTHER / FLEXIBILITY: Low metabolic impact, unclassified.
+        # Clinical Expectation: Neutral to mild aerobic drop.
+        'Yoga': 'Other', 
+        'Mind And Body': 'Other',
+        'Preparation And Recovery': 'Other', 
+        'Other Activity': 'Other'
+    }
+
+    # Create the new categorical feature
+    df_mapped = df.copy()
+    df_mapped['ExerciseModality'] = df_mapped[activity_col_name].map(modality_mapping)
+    
+    # Fill any weird missing or unmapped values just to be safe
+    df_mapped['ExerciseModality'] = df_mapped['ExerciseModality'].fillna('Other')
+    
+    return df_mapped
+
+
+# ==========================================
 # DATA DISCRETIZATION
 # ==========================================
 
@@ -20,11 +93,6 @@ def discretize_data(df, cv_strategy, bmi_strategy, hba1c_strategy, glucose_strat
     """
     print(f"Discretizing features | CV: {cv_strategy} | BMI: {bmi_strategy} | HbA1c: {hba1c_strategy} | Glucose: {glucose_strategy}")
     df_discrete = df.copy()
-
-    # Drop tracking columns
-    cols_to_remove = ["PtID", "DeviceDtTm", "UTCDtTm", "ExerciseName", "DistanceValue", "DistanceUnits", 
-                      "DurationUnits", "EnergyValue", "EnergyUnits", "TmZnOffset", "CleanActivityName", 
-                      "AOB", "CWL", "TimeSinceLastBolus", "LastBolus", "TimeSinceLastBasal", "LastBasal"]
     
     existing_cols = [c for c in cols_to_remove if c in df_discrete.columns]
     if existing_cols:
@@ -79,6 +147,10 @@ def discretize_data(df, cv_strategy, bmi_strategy, hba1c_strategy, glucose_strat
     if 'preExerciseRoc' in df_discrete.columns: df_discrete["preExerciseRoc"] = pd.cut(df_discrete["preExerciseRoc"], bins=startRoc_edges, labels=startRoc_labels)
     if 'IOB' in df_discrete.columns: df_discrete["IOB"] = pd.cut(df_discrete["IOB"], bins=[-np.inf, -0.2, 0.2, 2, np.inf], labels=["Negative", "Baseline", "Moderate", "High"])
     if 'COB' in df_discrete.columns: df_discrete["COB"] = pd.qcut(df_discrete["COB"], q=4, labels=["Low", "Moderate", "High", "Very High"], duplicates='drop')
+    if 'IOBnorm' in df_discrete.columns: df_discrete["IOBnorm"] = pd.qcut(df_discrete["IOBnorm"], q=3, labels=["Low Impact", "Medium Impact", "High Impact"], duplicates='drop')
+    if 'COBnorm' in df_discrete.columns: df_discrete["COBnorm"] = pd.qcut(df_discrete["COBnorm"], q=3, labels=["Low Carb Load", "Medium Carb Load", "High Carb Load"], duplicates='drop')
+    if 'AOB' in df_discrete.columns: df_discrete["AOB"] = pd.qcut(df_discrete["AOB"], q=3, labels=["Low AOB", "Medium AOB", "High AOB"], duplicates='drop')
+    if 'TotalCWL' in df_discrete.columns: df_discrete["TotalCWL"] = pd.qcut(df_discrete["TotalCWL"], q=3, labels=["Low CWL", "Medium CWL", "High CWL"], duplicates='drop')
     if 'ACWR' in df_discrete.columns: df_discrete["ACWR"] = pd.qcut(df_discrete["ACWR"], q=4, labels=["Sedentary", "Lightly Active", "Active", "Highly Active"], duplicates='drop')
     if 'MET' in df_discrete.columns: df_discrete["MET"] = pd.cut(df_discrete["MET"], bins=[0, 3, 6, np.inf], labels=["Light", "Moderate", "Vigorous"])
     if 'DurationValue' in df_discrete.columns: df_discrete["DurationValue"] = pd.cut(df_discrete["DurationValue"], bins=[0, 30, 60, np.inf], labels=["Short", "Medium", "Long"])
@@ -342,9 +414,9 @@ def apply_expert_constraints(learner, tiers):
             learner.addForbiddenArc(var2, var1)
 
     # Rule 4: Exercise internal (Simultaneous)
-    if 'MET_min' in learner.names() and 'ACWR' in learner.names():
-        learner.addForbiddenArc('MET_min', 'ACWR')
-        learner.addForbiddenArc('ACWR', 'MET_min')
+    if 'MET_min' in learner.names() and 'ExerciseModality' in learner.names():
+        learner.addForbiddenArc('MET_min', 'ExerciseModality')
+        learner.addForbiddenArc('ExerciseModality', 'MET_min')
 
     # Rule 5: Outcome Chronology (During vs Post)
     for post_metric in tiers['outcome_post']:

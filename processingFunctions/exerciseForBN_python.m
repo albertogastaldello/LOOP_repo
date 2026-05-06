@@ -16,6 +16,7 @@ function exerciseForBN_python()
     timeSinceLastBasal =  zeros(N, 1);
     lastBasal = zeros(N, 1);
     IOB = zeros(N, 1);
+    IOBnorm = zeros(N,1);
 
     for i = 1:N
 
@@ -27,12 +28,14 @@ function exerciseForBN_python()
         timeSinceLastBasal(i,1) = curr_insulinData.TimeSinceLastBasal;
         lastBasal(i,1) = curr_insulinData.LastBasal;
         IOB(i,1) = curr_insulinData.IOB;
+        IOBnorm(i,1) = curr_insulinData.IOBnorm;
 
     end
 
     exerciseTableForBN_python.InsSensitivity = insSensitivity;
     exerciseTableForBN_python.InsCarbRatio = insCarbRatio;
     exerciseTableForBN_python.IOB = IOB;
+    exerciseTableForBN_python.IOBnorm = IOBnorm;
     exerciseTableForBN_python.TimeSinceLastBolus = timeSinceLastBolus;
     exerciseTableForBN_python.LastBolus = lastBolus;
     exerciseTableForBN_python.TimeSinceLastBasal = timeSinceLastBasal;
