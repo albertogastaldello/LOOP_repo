@@ -41,7 +41,7 @@ function exerciseWithWearableData()
     shortSessions_counter = 0;
 
     % Loop over subjects
-    for i = 1:length(subjectsID)
+    for i = 15:length(subjectsID)
         
         % UNCOMMENT IF YOU WANT JUST TO VISUALIZE SOME EXAMPLES OF FEW CGM
         % DATA TRACES WITHOUT RUNNING THE ENTIRE LOOP
@@ -326,21 +326,27 @@ function [CF, CR, tslb, lb, tslBasal, lBasal, IOB] = getInsulinInfo(startExercis
     % CLOSEST IN TIME TO START EXERCISE, BEFORE OR AFTER
     
     if ~isempty(wizard)
-
+        % distanza temporale assoluta da startExercise
         timeDiff = abs(wizard.UTCDtTm - startExercise);
+    
+        % indici ordinati dal più vicino al più lontano
         [~, sortedIdx] = sort(timeDiff);
     
+        % scorri dal più vicino al più lontano
         for k = 1:length(sortedIdx)
             idx = sortedIdx(k);
-
+    
+            % cerca CF se non ancora trovato
             if isnan(CF) && ~isnan(wizard.InsulinSensitivity(idx))
                 CF = wizard.InsulinSensitivity(idx);
             end
-
+    
+            % cerca CR se non ancora trovato
             if isnan(CR) && ~isnan(wizard.InsulinCarbRatio(idx))
                 CR = wizard.InsulinCarbRatio(idx);
             end
-
+    
+            % esci appena li hai trovati entrambi
             if ~isnan(CF) && ~isnan(CR)
                 break
             end
