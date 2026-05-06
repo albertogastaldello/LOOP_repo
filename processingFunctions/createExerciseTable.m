@@ -106,7 +106,7 @@ function createExerciseTable(code_path, base_path)
             
             curr_exercise.MET = curr_exercise.EnergyValue ./ (curr_weight * (curr_exercise.DurationValue ./ 60));
 
-            missingMET_idx = find(isnan(curr_exercise.MET));
+            missingMET_idx = find(isnan(curr_exercise.MET) | curr_exercise.MET ==0);
             for m = 1:length(missingMET_idx)
                 curr_missingMET_idx = missingMET_idx(m);
                 curr_exName = char(curr_exercise.CleanActivityName(curr_missingMET_idx));

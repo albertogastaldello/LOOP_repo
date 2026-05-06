@@ -319,6 +319,10 @@ end
 
 function [CF, CR, tslb, lb, tslBasal, lBasal, IOB] = getInsulinInfo(startExercise, wizard, bolus_data, basal_data)
     CF=NaN; CR=NaN; tslb=NaN; lb=NaN; tslBasal=NaN; lBasal=NaN; IOB=NaN;
+    
+    basal_data(isnan(basal_data.basal_rate),:)=[];
+    bolus_data(isnan(bolus_data.bolus),:)=[];
+    
     maxTolerance = minutes(30);
     
     % Wizard CF and CR

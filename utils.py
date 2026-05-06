@@ -232,89 +232,6 @@ def plot_single_feature_distribution(df, feature_name, title_prefix=""):
     plt.show()
 
 
-
-
-# ==========================================
-# DATA PREPARATION
-# ==========================================
-def prepare_data(df, features_to_drop=None):
-    """Cleans raw dataframe, handles missing values, and drops unwanted features."""
-    clean_df = df.copy()
-    
-    # Strip categorical restrictions
-    for col in clean_df.columns:
-        clean_df[col] = clean_df[col].astype('object')
-        
-    # Handle missing values
-    clean_df = clean_df.fillna('Unknown')
-    hidden_nans = ['nan', 'NaN', 'None', '<NA>', 'NaT', '']
-    clean_df = clean_df.replace(hidden_nans, 'Unknown')
-    
-    # Lock as strings
-    clean_df = clean_df.astype(str)
-    
-    if features_to_drop:
-        # Only drop if the column actually exists in the dataframe
-        existing_drops = [f for f in features_to_drop if f in clean_df.columns]
-        clean_df = clean_df.drop(columns=existing_drops)
-        
-    missing_count = clean_df.isna().sum().sum()
-    print(f"Data prepped. Missing values: {missing_count}")
-    return clean_df
-
-
-# ==========================================
-# AUDIT 'UNKNOWN' SOURCES
-# =========================================
-
-def analyze_unknown_sources(df_raw, df_locked):
-    """
-    Traces 'Unknown' values in the discretized dataset back to their 
-    original values in the raw continuous dataset to determine the root cause.
-    """
-    print("Auditing sources of 'Unknown' categories...")
-    
-    # Find features that contain the exact string 'Unknown'
-    unknown_features = [col for col in df_locked.columns if 'Unknown' in df_locked[col].values]
-            
-    if not unknown_features:
-        print("No 'Unknown' values found in the dataset.")
-        return
-        
-    for col in unknown_features:
-        # 1. Get the indices (rows) where the discretized data is 'Unknown'
-        unknown_mask = df_locked[col] == 'Unknown'
-        unknown_count = unknown_mask.sum()
-        
-        # 2. Safety check: does this column exist in the raw data?
-        if col not in df_raw.columns:
-            print(f"\n⚠️ Feature: '{col}' | Total 'Unknowns': {unknown_count}")
-            print("   -> This column doesn't exist in the raw dataframe. Was it generated later?")
-            continue
-            
-        # 3. Extract the original values from the raw dataframe using those exact rows
-        original_values = df_raw.loc[unknown_mask, col]
-        
-        # 4. Count the occurrences (CRITICAL: dropna=False forces Pandas to count the NaNs)
-        value_counts = original_values.value_counts(dropna=False)
-        
-        print(f"Feature: '{col}' | Total 'Unknowns': {unknown_count}")
-        print("   Root causes in raw data:")
-        
-        for val, count in value_counts.items():
-            val_type = type(val).__name__
-            
-            # Format the output based on what the dirty data actually is
-            if pd.isna(val):
-                print(f"      - {count} rows were: <True Missing / NaN> (Type: {val_type})")
-            elif val == "":
-                print(f"      - {count} rows were: <Empty String> (Type: {val_type})")
-            else:
-                print(f"      - {count} rows were: '{val}' (Type: {val_type})")
-                
-    print("-" * 40)
-
-
 # ==========================================
 # COLLAPSE BINS
 # ==========================================
@@ -414,9 +331,11 @@ def apply_expert_constraints(learner, tiers):
             learner.addForbiddenArc(var2, var1)
 
     # Rule 4: Exercise internal (Simultaneous)
-    if 'MET_min' in learner.names() and 'ExerciseModality' in learner.names():
-        learner.addForbiddenArc('MET_min', 'ExerciseModality')
-        learner.addForbiddenArc('ExerciseModality', 'MET_min')
+    exercise_layer = [n for n in tiers['exercise']]
+    for var1, var2 in itertools.combinations(exercise_layer, 2):
+        if var1 in learner.names() and var2 in learner.names():
+            learner.addForbiddenArc(var1, var2)
+            learner.addForbiddenArc(var2, var1)
 
     # Rule 5: Outcome Chronology (During vs Post)
     for post_metric in tiers['outcome_post']:
