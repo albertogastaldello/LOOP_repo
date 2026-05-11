@@ -9,17 +9,17 @@ function stats = filterExerciseSessions()
     duplicateLog  = table();
     containedLog  = table();
     overlapLog    = table();
-    tooCloseLog = table();
+    shortDurationLog = table();
     
     pairCounterDup      = 0;
     pairCounterContained = 0;
     pairCounterOverlap   = 0;
-    pairCounterTooClose = 0;
 
     totalRemovedNullDuration = 0;
     totalRemovedDup = 0;
     totalRemovedContained = 0;
     totalRemovedOverlap = 0;
+    totalRemovedShortDuration = 0;
 
     initialCount = height(exerciseTable);
     
@@ -58,16 +58,30 @@ function stats = filterExerciseSessions()
             handlePartialOverlap(curr_sessions_removedContained, pairCounterOverlap, overlapLog);
         totalRemovedOverlap = totalRemovedOverlap + (countBefore4 - height(curr_sessions_removedOverlap));
 
-        % 
-        % ===== STEP 5: REMOVE SESSIONS WITH PREVIOUS SESSION CLOSER THAN 6
-        % HOURS
-        % [curr_sessions_removedCloseSessions, pairCounterTooClose, tooCloseLog] = ...
-        %     removeTooCloseSessions(curr_sessions_removedOverlap, pairCounterTooClose, tooCloseLog);
-    
-        % ===== STEP 6: ACCUMULA TABELLA PULITA =====
-        exerciseTable_clean = [exerciseTable_clean; curr_sessions_removedOverlap];
-        %exerciseTable_clean = [exerciseTable_clean; curr_sessions_removedCloseSessions];
-    
+        % ===== STEP 5: REMOVE SESSIONS WITH DURATION LESS THAN 5 MINUTES
+        countBefore5 = height(curr_sessions_removedOverlap);
+        [curr_sessions_removedShortDuration, shortDurationLog] = ...
+            removeShortDuration(curr_sessions_removedOverlap, shortDurationLog);
+        totalRemovedShortDuration = totalRemovedShortDuration + (countBefore5 - height(curr_sessions_removedShortDuration));
+        
+        % add average number of sessions per week for each subject
+        if ~ isempty(curr_sessions_removedShortDuration)
+            if height(curr_sessions_removedShortDuration) == 1
+                curr_sessions_removedShortDuration.avgSessionsPerWeek = NaN;
+            else
+                firstExerciseDay = curr_sessions_removedShortDuration.UTCDtTm(1);
+                lastExerciseDay = curr_sessions_removedShortDuration.UTCDtTm(end);
+                exerciseWeeks = (days(lastExerciseDay - firstExerciseDay))/7;
+                avgSessionsPerWeek = height(curr_sessions_removedShortDuration)/exerciseWeeks;
+                curr_sessions_removedShortDuration.avgSessionsPerWeek = ...
+                repmat(avgSessionsPerWeek, height(curr_sessions_removedShortDuration), 1);
+            end
+
+            % ===== STEP 6: ACCUMULA TABELLA PULITA =====
+            exerciseTable_clean = [exerciseTable_clean; curr_sessions_removedShortDuration];
+
+        end
+
     end
 
     stats.InitialSessions = initialCount;
@@ -94,8 +108,6 @@ function [curr_sessions, nullDurationLog] = removeNullDuration(curr_sessions, nu
         nullDurationLog = [nullDurationLog; curr_sessions(nullDurationIndices,:)];
         curr_sessions(nullDurationIndices,:) = [];
     end
-
-    
 end
 
 
@@ -222,36 +234,11 @@ function [curr_sessions, pairCounterOverlap, overlapLog] = handlePartialOverlap(
 end
 
 
-% REMOVE SESSIONS THAT START WITHIN 6 HOURS AFTER THE END OF THE PREVIOUS
-% SESSION
-function [curr_sessions, pairCounterTooClose, tooCloseLog] = removeTooCloseSessions(curr_sessions, pairCounterTooClose, tooCloseLog)
-    startTimes = curr_sessions.DeviceDtTm;
-    validDuration = ~isnan(curr_sessions.DurationValue);
-    endTimes = startTimes;
-    endTimes(validDuration) = startTimes(validDuration) + minutes(curr_sessions.DurationValue(validDuration));
-
-    rowsToRemove = [];
-
-    if height(curr_sessions) > 1
-        for k = 1:height(curr_sessions)-1
-            % se la sessione successiva inizia entro 6 ore dalla fine della precedente
-            if startTimes(k+1) <= endTimes(k) + hours(6)
-                pairCounterTooClose = pairCounterTooClose + 1;
-
-                % salva log
-                tooClosePair = curr_sessions([k k+1], :);
-                tooClosePair.TooClosePairID = repmat(pairCounterTooClose, 2, 1);
-                tooClosePair.TooCloseOrder  = ["First"; "Second"];
-                tooClosePair.FirstEndTime   = [endTimes(k); endTimes(k+1)];
-                tooCloseLog = [tooCloseLog; tooClosePair];
-
-                % marca la seconda sessione da rimuovere
-                rowsToRemove(end+1) = k+1;
-            end
-        end
-
-        % rimuovi le sessioni troppo vicine
-        curr_sessions(unique(rowsToRemove), :) = [];
+% REMOVE SHORT DURATION SESSIONS
+function [curr_sessions, shortDurationLog] = removeShortDuration(curr_sessions, shortDurationLog)
+    shortDurationIndices = find(curr_sessions.DurationValue < 5);
+    if ~isempty(shortDurationIndices)
+        shortDurationLog = [shortDurationLog; curr_sessions(shortDurationIndices,:)];
+        curr_sessions(shortDurationIndices,:) = [];
     end
 end
-

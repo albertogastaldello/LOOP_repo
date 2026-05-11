@@ -90,13 +90,6 @@ function exerciseWithWearableData()
             
             curr_session = curr_exercise(j,:);
 
-            % remove sessions that last less than 5 minutes
-            curr_sessionDuration = curr_session.DurationValue;
-            if curr_sessionDuration < 5
-                shortSessions_counter = shortSessions_counter + 1;
-                continue
-            end
-            
             startExercise = curr_session.UTCDtTm;
             exerciseDuration = curr_session.DurationValue;
             endExercise   = startExercise + minutes(exerciseDuration);
@@ -245,6 +238,8 @@ function exerciseWithWearableData()
             exercise_valid(counter,:) = curr_session;
             
         end
+
+
     end
     
     % Optional: trim unused preallocated rows

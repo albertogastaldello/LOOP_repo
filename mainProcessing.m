@@ -79,7 +79,8 @@ createExerciseTable(code_path, base_path);
 
 %% 8. filterExerciseSessions.m to filter the exercise table removing 
 % duplicates, sessions completely contained in others, sessions that 
-% overlap (and sessions too close in time). 
+% overlap and sessions that last less than 5 minutes. 
+% Compute also the average number of sessions per week for each subject.
 % The filtered exercise table is saved as exerciseTable_filtered.mat
 
 disp('filterExerciseSessions');
@@ -87,7 +88,7 @@ disp('filterExerciseSessions');
 stats = filterExerciseSessions();
 
 %% 9. exerciseWithWearableData.m to load exerciseTable_filtered.mat, 
-% remove exercise sessions that last less than 5 minutes and have few cgm 
+% remove exercise sessions that have few cgm 
 % data, and add wearable data around each exercise session (cgm, insulin, meals).
 % For meals data, before computing COB reported meals are aligned and
 % possible unannounced meals are detected.
