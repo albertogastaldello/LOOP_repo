@@ -121,7 +121,9 @@ function createExerciseTable(code_path, base_path)
         
             % --- DEMOGRAPHICS & LABS ---
             curr_exercise.age = repmat(subjectsStruct.(struct_patientField).surveys.ageAtBaseline(1), n_exercises, 1);
-            curr_exercise.gender = repmat(subjectsStruct.(struct_patientField).surveys.gender(1), n_exercises, 1); 
+            curr_exercise.gender = repmat(subjectsStruct.(struct_patientField).surveys.gender(1), n_exercises, 1);
+            curr_exercise.race = repmat(subjectsStruct.(struct_patientField).surveys.race(1), n_exercises, 1);
+            curr_exercise.diabetesDuration = repmat(subjectsStruct.(struct_patientField).surveys.duration(1), n_exercises, 1);
             curr_exercise.height = repmat(subjectsStruct.(struct_patientField).surveys.height_cm(1), n_exercises, 1);
             curr_exercise.weight = repmat(curr_weight, n_exercises, 1);
             
