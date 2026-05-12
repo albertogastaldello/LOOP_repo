@@ -4,6 +4,7 @@ import pandas as pd
 import itertools
 import numpy as np
 import matplotlib.pyplot as plt
+import plotly.express as px
 
 
 # ==========================================
@@ -113,14 +114,14 @@ def discretize_data(df, cv_strategy, bmi_strategy, hba1c_strategy, glucose_strat
     # 2. BMI
     if 'BMI' in df_discrete.columns:
         if bmi_strategy == "clinical":
-            df_discrete["BMI"] = pd.cut(df_discrete["BMI"], bins=[0, 18.5, 24.9, 29.9, np.inf], labels=["Underweight", "Normal", "Overweight", "Obese"])
+            df_discrete["BMI"] = pd.cut(df_discrete["BMI"], bins=[0, 18.5, 24.9, 29.9, np.inf], labels=["Underweight", "Healthyweight", "Overweight", "Obese"])
         elif bmi_strategy == "statistical":
             df_discrete["BMI"] = pd.qcut(df_discrete["BMI"], q=3, labels=["Lower BMI", "Medium BMI", "Higher BMI"], duplicates='drop')
 
     # 3. HbA1c
     if 'HbA1c' in df_discrete.columns:
         if hba1c_strategy == "clinical":
-            df_discrete["HbA1c"] = pd.cut(df_discrete["HbA1c"], bins=[0, 5.7, 6.4, 7, np.inf], labels=["Normal", "Prediabetes", "Diabetes - Control", "Diabetes - Poor Control"])
+            df_discrete["HbA1c"] = pd.cut(df_discrete["HbA1c"], bins=[0, 5.7, 6.4,  np.inf], labels=["Normal", "Prediabetes", "Diabetes"])
         elif hba1c_strategy == "statistical":
             df_discrete["HbA1c"] = pd.qcut(df_discrete["HbA1c"], q=3, labels=["Lower HbA1c", "Medium HbA1c", "Higher HbA1c"], duplicates='drop')
 
@@ -135,15 +136,15 @@ def discretize_data(df, cv_strategy, bmi_strategy, hba1c_strategy, glucose_strat
 
     if 'preExerciseRoc' in df_discrete.columns:
         if roc_strategy == "clinical":
-            df_discrete["preExerciseRoc"] = pd.cut(df_discrete["preExerciseRoc"], bins=[-np.inf, -2, -0.5, 0.5, 2, np.inf], labels=["Rapidly Falling", "Falling", "Stable", "Rising", "Rapidly Rising"])
+            df_discrete["preExerciseRoc"] = pd.cut(df_discrete["preExerciseRoc"], bins=[-np.inf, -0.5, 0.5, np.inf], labels=["Falling", "Stable", "Rising"])
         elif roc_strategy == "statistical":
-            df_discrete["preExerciseRoc"] = pd.qcut(df_discrete["preExerciseRoc"], q=5, labels=["Rapidly Falling", "Falling", "Stable", "Rising", "Rapidly Rising"], duplicates='drop')
+            df_discrete["preExerciseRoc"] = pd.qcut(df_discrete["preExerciseRoc"], q=3, labels=["Falling", "Stable", "Rising"], duplicates='drop')
 
     if 'exerciseGlucoseRoc' in df_discrete.columns:
         if roc_strategy == "clinical":
-            df_discrete["exerciseGlucoseRoc"] = pd.cut(df_discrete["exerciseGlucoseRoc"], bins=[-np.inf, -2, -0.5, 0.5, 2, np.inf], labels=["Rapidly Falling", "Falling", "Stable", "Rising", "Rapidly Rising"])
+            df_discrete["exerciseGlucoseRoc"] = pd.cut(df_discrete["exerciseGlucoseRoc"], bins=[-np.inf, -1, 1, np.inf], labels=["Falling", "Stable", "Rising"])
         elif roc_strategy == "statistical":
-            df_discrete["exerciseGlucoseRoc"] = pd.qcut(df_discrete["exerciseGlucoseRoc"], q=5, labels=["Rapidly Falling", "Falling", "Stable", "Rising", "Rapidly Rising"], duplicates='drop')
+            df_discrete["exerciseGlucoseRoc"] = pd.qcut(df_discrete["exerciseGlucoseRoc"], q=3, labels=["Falling", "Stable", "Rising"], duplicates='drop')
 
 
     # -------------------------------------------------------------
@@ -175,6 +176,7 @@ def discretize_data(df, cv_strategy, bmi_strategy, hba1c_strategy, glucose_strat
     if 'EnergyPerMinute' in df_discrete.columns: df_discrete["EnergyPerMinute"] = pd.qcut(df_discrete["EnergyPerMinute"], q=3, labels=["Low", "Medium", "High"], duplicates='drop')
     
     if 'exerciseGlucoseExcursion' in df_discrete.columns: df_discrete["exerciseGlucoseExcursion"] = pd.cut(df_discrete["exerciseGlucoseExcursion"], bins=[-np.inf, -40, -10, 10, np.inf], labels=["Severe Drop", "Moderate Drop", "Stable", "Rise"])
+    
     if 'minGlucosePostExercise' in df_discrete.columns: df_discrete["minGlucosePostExercise"] = pd.cut(df_discrete["minGlucosePostExercise"], bins=[-np.inf, 54, 70, 180, np.inf], labels=["Severe Hypo", "Hypo Risk", "Target", "Elevated"])
     if 'postExerciseTIR' in df_discrete.columns: df_discrete["postExerciseTIR"] = pd.cut(df_discrete["postExerciseTIR"], bins=[-np.inf, 50, 70, np.inf], labels=["Poor", "Borderline", "Target"])
 
@@ -186,66 +188,93 @@ def discretize_data(df, cv_strategy, bmi_strategy, hba1c_strategy, glucose_strat
 # DISTRIBUTION PLOT
 # =========================================
 
-def plot_single_feature_distribution(df, feature_name, title_prefix=""):
+def plot_single_feature_distribution(df, feature_name, title_prefix="", save_png=False):
     """
-    Plots a horizontal bar chart for a single specified feature.
-    Assigns a distinct, colorblind-safe color to each discretized level (category).
+    Plots an interactive horizontal bar chart for a single specified feature using Plotly.
+    Includes the Okabe-Ito colorblind-safe palette and saves to PNG if requested.
     """
     if feature_name not in df.columns:
         print(f"Error: Feature '{feature_name}' not found in the dataset.")
         return
 
-
-    # Calculate percentages
+    # 1. Calculate percentages and sort
     counts = df[feature_name].value_counts(normalize=True) * 100
     try:
-        # Sort by the underlying categorical/logical order if Pandas knows it
         counts = counts.sort_index()
     except TypeError:
         pass 
-
-    y_pos = range(len(counts))
+        
+    # Convert to a temporary DataFrame specifically for Plotly
+    plot_df = pd.DataFrame({
+        'Category': counts.index.astype(str),
+        'Percentage': counts.values
+    })
     
-    # Expanded Okabe-Ito Colorblind-Safe Palette 
-    # (Blue, Amber, Vermillion, Green, Light Blue, Yellow, Pink, Grey)
+    # 2. Expanded Okabe-Ito Colorblind-Safe Palette 
     color_palette = ['#0072B2', '#E69F00', '#D55E00', '#009E73', '#56B4E9', '#F0E442', '#CC79A7', '#999999']
     
-    # Ensure the plot height dynamically scales with the number of bins
-    fig, ax = plt.subplots(figsize=(10, max(3, len(counts) * 0.8)))
+    # Dynamically set height based on the number of bars
+    dynamic_height = max(400, len(counts) * 45)
     
-    # Map colors to bars (loops back to the start if there are more than 8 bins)
-    colors = [color_palette[i % len(color_palette)] for i in range(len(counts))]
-
-    bars = ax.barh(y_pos, counts.values, align='center', color=colors)
-
-    # Add exact percentage text at the end of each bar
-    for j, bar in enumerate(bars):
-        val = counts.values[j]
-        # Offset the text slightly past the end of the bar
-        ax.text(val + 1.5, bar.get_y() + bar.get_height()/2, f'{val:.1f}%', 
-                va='center', ha='left', fontsize=11, fontweight='bold')
-
-    # Format Axes
-    ax.set_yticks(y_pos)
-    ax.set_yticklabels(counts.index.astype(str), fontsize=12)
-    
-    # Dynamically set X-axis limit to leave room for the percentage text
-    ax.set_xlim(0, max(counts.values) * 1.15) 
-    
-    # Titles and Labels
+    # Title Setup
     title = f"Distribution of {feature_name}"
     if title_prefix:
         title += f" {title_prefix}"
+
+    # 3. Build the Plotly Bar Chart
+    fig = px.bar(
+        plot_df, 
+        x='Percentage', 
+        y='Category', 
+        orientation='h',
+        text=plot_df['Percentage'].apply(lambda x: f'{x:.1f}%'), # Format text to 1 decimal
+        color='Category',
+        color_discrete_sequence=color_palette,
+        height=dynamic_height
+    )
+    
+    # 4. Styling and Layout Formatting
+    fig.update_traces(
+        textposition='outside', # Pushes the percentage text past the end of the bar
+        textfont=dict(size=12, family="Arial Black"),
+        showlegend=False        # Hide legend since the y-axis already labels the categories
+    )
+    
+    fig.update_layout(
+        title=dict(
+            text=title, 
+            font=dict(size=18, family="Arial"),
+            y=0.95, x=0.5, xanchor='center', yanchor='top'
+        ),
+        xaxis_title="Percentage (%)",
+        yaxis_title=None,
+        plot_bgcolor='white', # Clean academic background
+        xaxis=dict(
+            range=[0, plot_df['Percentage'].max() * 1.20], # Room for the outside text
+            showgrid=False,
+            zeroline=False
+        ),
+        yaxis=dict(
+            autorange="reversed", # Matches Matplotlib's top-to-bottom reading order
+            tickfont=dict(size=14)
+        ),
+        margin=dict(l=20, r=40, t=70, b=20)
+    )
+
+    # 5. Display the interactive chart
+    fig.show()
+    
+    '''
+    # 6. Save as High-Res PNG if requested
+    if save_png:
+        # Clean the feature name just in case it has weird characters
+        safe_name = "".join([c for c in feature_name if c.isalnum() or c in ('_', '-')]).rstrip()
+        filename = f"distribution_{safe_name}.png"
         
-    ax.set_title(title, fontweight='bold', fontsize=15, pad=15)
-    ax.set_xlabel("Percentage (%)", fontsize=12)
-
-    # Despine for a clean, academic look
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-
-    plt.tight_layout()
-    plt.show()
+        # scale=3 acts like 'dpi=300' in matplotlib, making the image crisp for presentations
+        fig.write_image(filename, scale=3)
+        print(f"✅ High-resolution image saved locally as '{filename}'")
+    '''
 
 
 # ==========================================
@@ -264,8 +293,8 @@ def collapse_sparse_bins(df):
     # 1. BMI: Group extremes to ensure statistical power
     if 'BMI' in clean_df.columns:
         clean_df['BMI'] = clean_df['BMI'].replace(
-            {'Underweight': 'Normal/Underweight', 
-             'Normal': 'Normal/Underweight',
+            {'Underweight': 'Healthyweight/Underweight', 
+             'Healthyweight': 'Healthyweight/Underweight',
              'Obese': 'Overweight/Obese', 
              'Overweight': 'Overweight/Obese'}
         )

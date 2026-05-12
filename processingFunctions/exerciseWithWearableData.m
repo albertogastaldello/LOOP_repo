@@ -114,17 +114,19 @@ function exerciseWithWearableData()
             idxPost = cgm_data.datetime >= endExercise & ...
                 cgm_data.datetime <= postExercise;
 
-            maxSamples_preExercise = (hoursPreExercise * 60) / 5;
-            maxSamples_postExercise = (hoursPostExercise * 60) / 5;
+
+            maxSamples_preExercise  = floor((hoursPreExercise * 60) / 5) + 1;
+            maxSamples_during       = floor(minutes(exerciseDuration) / 5) + 1;
+            maxSamples_postExercise = floor((hoursPostExercise * 60) / 5) + 1;
             
             % Minimum number of points
-            % if sum(idxPre) < 0.85 * 72 || sum(idxExercise) < 3 || ...
-            %         sum(idxPost) < 0.85 * 72
-            if sum(idxPre) < 0.85 * maxSamples_preExercise || ...
-                    sum(idxExercise) < 0.85 * floor(exerciseDuration/5) ...
-                    || sum(idxPost) < 0.85 * maxSamples_postExercise
-                fewCgmData_counter = fewCgmData_counter + 1;
 
+            if sum(idxPre) < (0.85 * maxSamples_preExercise) || ...
+               sum(idxExercise) < (0.85 * maxSamples_during) || ...
+               sum(idxPost) < (0.7 * maxSamples_postExercise)
+               
+                % Reject the session due to insufficient CGM density
+                fewCgmData_counter = fewCgmData_counter + 1;
 
                 % UNCOMMENT TO VISUALIZE SOME EXAMPLES OF FEW CGM DATA
                 % TRACES
