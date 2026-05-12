@@ -140,13 +140,6 @@ def discretize_data(df, cv_strategy, bmi_strategy, hba1c_strategy, glucose_strat
         elif roc_strategy == "statistical":
             df_discrete["preExerciseRoc"] = pd.qcut(df_discrete["preExerciseRoc"], q=3, labels=["Falling", "Stable", "Rising"], duplicates='drop')
 
-    if 'exerciseGlucoseRoc' in df_discrete.columns:
-        if roc_strategy == "clinical":
-            df_discrete["exerciseGlucoseRoc"] = pd.cut(df_discrete["exerciseGlucoseRoc"], bins=[-np.inf, -1, 1, np.inf], labels=["Falling", "Stable", "Rising"])
-        elif roc_strategy == "statistical":
-            df_discrete["exerciseGlucoseRoc"] = pd.qcut(df_discrete["exerciseGlucoseRoc"], q=3, labels=["Falling", "Stable", "Rising"], duplicates='drop')
-
-
     # -------------------------------------------------------------
     # FIXED FEATURES (Always discretized the same way, based on clinical thresholds or natural breaks)
     # -------------------------------------------------------------
@@ -175,10 +168,44 @@ def discretize_data(df, cv_strategy, bmi_strategy, hba1c_strategy, glucose_strat
     if 'MET_min' in df_discrete.columns: df_discrete["MET_min"] = pd.qcut(df_discrete["MET_min"], q=3, labels=["Low", "Medium", "High"], duplicates='drop')
     if 'EnergyPerMinute' in df_discrete.columns: df_discrete["EnergyPerMinute"] = pd.qcut(df_discrete["EnergyPerMinute"], q=3, labels=["Low", "Medium", "High"], duplicates='drop')
     
-    if 'exerciseGlucoseExcursion' in df_discrete.columns: df_discrete["exerciseGlucoseExcursion"] = pd.cut(df_discrete["exerciseGlucoseExcursion"], bins=[-np.inf, -40, -10, 10, np.inf], labels=["Severe Drop", "Moderate Drop", "Stable", "Rise"])
-    
-    if 'minGlucosePostExercise' in df_discrete.columns: df_discrete["minGlucosePostExercise"] = pd.cut(df_discrete["minGlucosePostExercise"], bins=[-np.inf, 54, 70, 180, np.inf], labels=["Severe Hypo", "Hypo Risk", "Target", "Elevated"])
+    if 'exerciseMaxExcursion' in df_discrete.columns: df_discrete["exerciseMaxExcursion"] = pd.qcut(df_discrete["exerciseMaxExcursion"], q=3, labels=["Small", "Medium", "Large"], duplicates='drop')
+    if 'exerciseMaxSpikeRoc' in df_discrete.columns: df_discrete["exerciseMaxSpikeRoc"] = pd.cut(df_discrete["exerciseMaxSpikeRoc"], bins=[-np.inf, 1, 2, np.inf], labels=["Stable", "Moderate Rise", "Rapide Rise"])
+    if 'exerciseMaxDropRoc' in df_discrete.columns: df_discrete["exerciseMaxDropRoc"] = pd.cut(df_discrete["exerciseMaxDropRoc"], bins=[-np.inf, -2, -1, np.inf], labels=["Rapid Drop", "Moderate Drop", "Stable"])
+    if 'exerciseNadir' in df_discrete.columns: df_discrete["exerciseNadir"] = pd.cut(df_discrete["exerciseNadir"], bins=[-np.inf, 70, 180, np.inf], labels=["Hypo", "Target", "Hyper"])
+    if 'exercisePeak' in df_discrete.columns: df_discrete["exercisePeak"] = pd.cut(df_discrete["exercisePeak"], bins=[-np.inf, 70, 180, np.inf], labels=["Hypo", "Target", "Hyper"])
+    if 'exerciseTIR' in df_discrete.columns: df_discrete["exerciseTIR"] = pd.cut(df_discrete["exerciseTIR"], bins=[-np.inf, 50, 70, np.inf], labels=["Poor", "Borderline", "Target"])
+    if 'exerciseTBR' in df_discrete.columns: df_discrete["exerciseTBR"] = pd.cut(df_discrete["exerciseTBR"], bins=[-np.inf, 0, 4, np.inf], labels=["Perfect", "Mild", "Risk"])
+    if 'exerciseAUC70' in df_discrete.columns:
+        # Find the median of ONLY the sessions where AUC > 0
+        non_zero_auc = df_discrete[df_discrete['exerciseAUC70'] > 0]['exerciseAUC70']
+        if not non_zero_auc.empty:
+            auc_median = non_zero_auc.median()
+            df_discrete['exerciseAUC70'] = pd.cut(
+                df_discrete['exerciseAUC70'],
+                bins=[-np.inf, 0.001, auc_median, np.inf],
+                labels=['Zero', 'Mild Severity', 'High Severity']
+            )
+        else:
+            df_discrete['exerciseAUC70'] = 'Zero'
+
+    if 'maxGlucosePostExercise' in df_discrete.columns: df_discrete["maxGlucosePostExercise"] = pd.cut(df_discrete["maxGlucosePostExercise"], bins=[-np.inf, 70, 180, np.inf], labels=["Hypo", "Target", "Hyper"])
+    if 'minGlucosePostExercise' in df_discrete.columns: df_discrete["minGlucosePostExercise"] = pd.cut(df_discrete["minGlucosePostExercise"], bins=[-np.inf, 70, 180, np.inf], labels=["Hypo", "Target", "Elevated"])
     if 'postExerciseTIR' in df_discrete.columns: df_discrete["postExerciseTIR"] = pd.cut(df_discrete["postExerciseTIR"], bins=[-np.inf, 50, 70, np.inf], labels=["Poor", "Borderline", "Target"])
+    if 'postExerciseTimeToNadir' in df_discrete.columns: df_discrete["postExerciseTimeToNadir"] = pd.qcut(df_discrete["postExerciseTimeToNadir"], q=3, labels=["Early Drop", "Mid Drop", "Late Drop"])
+    if 'postExerciseTBR' in df_discrete.columns: df_discrete["postExerciseTBR"] = pd.cut(df_discrete["postExerciseTBR"], bins=[-np.inf, 0, 4, np.inf], labels=["Perfect", "Mild", "Risk"])
+    if 'postExerciseTAR' in df_discrete.columns: df_discrete["postExerciseTAR"] = pd.cut(df_discrete["postExerciseTAR"], bins=[-np.inf, 25, 50, np.inf], labels=["Target", "Elevated", "Risk"])
+    if 'postExerciseAUC70' in df_discrete.columns:
+        non_zero_auc = df_discrete[df_discrete['postExerciseAUC70'] > 0]['postExerciseAUC70']
+        if not non_zero_auc.empty:
+            auc_median = non_zero_auc.median()
+            df_discrete['postExerciseAUC70'] = pd.cut(
+                df_discrete['postExerciseAUC70'],
+                bins=[-np.inf, 0.001, auc_median, np.inf],
+                labels=['Zero', 'Mild Severity', 'High Severity']
+            )
+        else:
+            df_discrete['postExerciseAUC70'] = 'Zero'
+
 
     print("Discretization complete.")
     return df_discrete
