@@ -84,7 +84,7 @@ def map_exercise_modality(df, activity_col_name="CleanActivityName"):
 # ==========================================
 
 
-def discretize_data(df, cv_strategy, bmi_strategy, hba1c_strategy, glucose_strategy, cols_to_remove):
+def discretize_data(df, cv_strategy, bmi_strategy, hba1c_strategy, glucose_strategy, roc_strategy, cols_to_remove):
 
     """
     Transforms continuous physiological data into discrete bins.
@@ -131,34 +131,50 @@ def discretize_data(df, cv_strategy, bmi_strategy, hba1c_strategy, glucose_strat
         elif glucose_strategy == "statistical":
             df_discrete["startExerciseGlucoseLevel"] = pd.qcut(df_discrete["startExerciseGlucoseLevel"], q=3, labels=["Lower Glucose", "Target/Medium", "Higher Glucose"], duplicates='drop')
 
+    # 5. Glucose Rate of Change
+
+    if 'preExerciseRoc' in df_discrete.columns:
+        if roc_strategy == "clinical":
+            df_discrete["preExerciseRoc"] = pd.cut(df_discrete["preExerciseRoc"], bins=[-np.inf, -2, -0.5, 0.5, 2, np.inf], labels=["Rapidly Falling", "Falling", "Stable", "Rising", "Rapidly Rising"])
+        elif roc_strategy == "statistical":
+            df_discrete["preExerciseRoc"] = pd.qcut(df_discrete["preExerciseRoc"], q=5, labels=["Rapidly Falling", "Falling", "Stable", "Rising", "Rapidly Rising"], duplicates='drop')
+
+    if 'exerciseGlucoseRoc' in df_discrete.columns:
+        if roc_strategy == "clinical":
+            df_discrete["exerciseGlucoseRoc"] = pd.cut(df_discrete["exerciseGlucoseRoc"], bins=[-np.inf, -2, -0.5, 0.5, 2, np.inf], labels=["Rapidly Falling", "Falling", "Stable", "Rising", "Rapidly Rising"])
+        elif roc_strategy == "statistical":
+            df_discrete["exerciseGlucoseRoc"] = pd.qcut(df_discrete["exerciseGlucoseRoc"], q=5, labels=["Rapidly Falling", "Falling", "Stable", "Rising", "Rapidly Rising"], duplicates='drop')
+
 
     # -------------------------------------------------------------
     # FIXED FEATURES (Always discretized the same way, based on clinical thresholds or natural breaks)
     # -------------------------------------------------------------
-    startRoc_edges = [-np.inf, -2, -1, 1, 2, np.inf]
-    startRoc_labels = ["Rapidly Falling", "Falling", "Stable", "Rising", "Rapidly Rising"]
+
 
     if 'age' in df_discrete.columns: df_discrete["age"] = pd.qcut(df_discrete["age"], q=3, labels=["Younger", "Middle", "Older"], duplicates='drop')
+    if 'race' in df_discrete.columns: df_discrete["race"] = df_discrete["race"].map({1.0: "white", 2.0: "black", 3.0: "asian", 4.0: "pacific", 5.0: "american indian / alaskan native", 6.0: "no answer", 7.0: "more than one"})
     if 'gender' in df_discrete.columns: df_discrete["gender"] = df_discrete["gender"].map({1.0: "male", 2.0: "female"})
+    if 'diabetesDuration' in df_discrete.columns: df_discrete["diabetesDuration"] = pd.qcut(df_discrete["diabetesDuration"], q=3, labels=["Short", "Medium", "Long"], duplicates='drop')
+    if 'avgSessionsPerWeek' in df_discrete.columns: df_discrete["avgSessionsPerWeek"] = pd.qcut(df_discrete["avgSessionsPerWeek"], q=3, labels=["Low", "Medium", "High"], duplicates='drop')
     if 'height' in df_discrete.columns: df_discrete["height"] = pd.qcut(df_discrete["height"], q=3, labels=["Shorter", "Average", "Taller"], duplicates='drop')
     if 'weight' in df_discrete.columns: df_discrete["weight"] = pd.qcut(df_discrete["weight"], q=3, labels=["Lighter", "Average", "Heavier"], duplicates='drop')
     if 'InsSensitivity' in df_discrete.columns: df_discrete["InsSensitivity"] = pd.qcut(df_discrete["InsSensitivity"], q=3, labels=["Low", "Medium", "High"], duplicates='drop')
     if 'InsCarbRatio' in df_discrete.columns: df_discrete["InsCarbRatio"] = pd.qcut(df_discrete["InsCarbRatio"], q=3, labels=["Low", "Medium", "High"], duplicates='drop')
-    if 'preExerciseRoc' in df_discrete.columns: df_discrete["preExerciseRoc"] = pd.cut(df_discrete["preExerciseRoc"], bins=startRoc_edges, labels=startRoc_labels)
     if 'IOB' in df_discrete.columns: df_discrete["IOB"] = pd.cut(df_discrete["IOB"], bins=[-np.inf, -0.2, 0.2, 2, np.inf], labels=["Negative", "Baseline", "Moderate", "High"])
     if 'COB' in df_discrete.columns: df_discrete["COB"] = pd.qcut(df_discrete["COB"], q=4, labels=["Low", "Moderate", "High", "Very High"], duplicates='drop')
     if 'IOBnorm' in df_discrete.columns: df_discrete["IOBnorm"] = pd.qcut(df_discrete["IOBnorm"], q=3, labels=["Low Impact", "Medium Impact", "High Impact"], duplicates='drop')
     if 'COBnorm' in df_discrete.columns: df_discrete["COBnorm"] = pd.qcut(df_discrete["COBnorm"], q=3, labels=["Low Carb Load", "Medium Carb Load", "High Carb Load"], duplicates='drop')
+    
     if 'AOB' in df_discrete.columns: df_discrete["AOB"] = pd.qcut(df_discrete["AOB"], q=3, labels=["Low AOB", "Medium AOB", "High AOB"], duplicates='drop')
     if 'TotalCWL' in df_discrete.columns: df_discrete["TotalCWL"] = pd.qcut(df_discrete["TotalCWL"], q=3, labels=["Low CWL", "Medium CWL", "High CWL"], duplicates='drop')
     if 'ACWR' in df_discrete.columns: df_discrete["ACWR"] = pd.qcut(df_discrete["ACWR"], q=4, labels=["Sedentary", "Lightly Active", "Active", "Highly Active"], duplicates='drop')
+    
     if 'MET' in df_discrete.columns: df_discrete["MET"] = pd.cut(df_discrete["MET"], bins=[0, 3, 6, np.inf], labels=["Light", "Moderate", "Vigorous"])
     if 'DurationValue' in df_discrete.columns: df_discrete["DurationValue"] = pd.cut(df_discrete["DurationValue"], bins=[0, 30, 60, np.inf], labels=["Short", "Medium", "Long"])
     if 'MET_min' in df_discrete.columns: df_discrete["MET_min"] = pd.qcut(df_discrete["MET_min"], q=3, labels=["Low", "Medium", "High"], duplicates='drop')
     if 'EnergyPerMinute' in df_discrete.columns: df_discrete["EnergyPerMinute"] = pd.qcut(df_discrete["EnergyPerMinute"], q=3, labels=["Low", "Medium", "High"], duplicates='drop')
     
     if 'exerciseGlucoseExcursion' in df_discrete.columns: df_discrete["exerciseGlucoseExcursion"] = pd.cut(df_discrete["exerciseGlucoseExcursion"], bins=[-np.inf, -40, -10, 10, np.inf], labels=["Severe Drop", "Moderate Drop", "Stable", "Rise"])
-    if 'exerciseGlucoseRoc' in df_discrete.columns: df_discrete["exerciseGlucoseRoc"] = pd.cut(df_discrete["exerciseGlucoseRoc"], bins=startRoc_edges, labels=startRoc_labels)
     if 'minGlucosePostExercise' in df_discrete.columns: df_discrete["minGlucosePostExercise"] = pd.cut(df_discrete["minGlucosePostExercise"], bins=[-np.inf, 54, 70, 180, np.inf], labels=["Severe Hypo", "Hypo Risk", "Target", "Elevated"])
     if 'postExerciseTIR' in df_discrete.columns: df_discrete["postExerciseTIR"] = pd.cut(df_discrete["postExerciseTIR"], bins=[-np.inf, 50, 70, np.inf], labels=["Poor", "Borderline", "Target"])
 
@@ -312,11 +328,16 @@ def apply_expert_constraints(learner, tiers):
 
     # Rule 2: Root Nodes (Demographics)
     for node in tiers['static']:
-        if node not in ['age', 'gender'] and node in learner.names():
+        if node not in ['age', 'gender', 'diabetesDuration'] and node in learner.names():
             if 'age' in learner.names(): learner.addForbiddenArc(node, 'age')
             if 'gender' in learner.names(): learner.addForbiddenArc(node, 'gender')
+            if 'diabetesDuration' in learner.names(): learner.addForbiddenArc(node, 'diabetesDuration')
         learner.addForbiddenArc('gender', 'age')  
-        learner.addForbiddenArc('age', 'gender')  
+        learner.addForbiddenArc('age', 'gender') 
+        learner.addForbiddenArc('diabetesDuration', 'age')
+        learner.addForbiddenArc('age', 'diabetesDuration')
+        learner.addForbiddenArc('gender', 'diabetesDuration')
+        learner.addForbiddenArc('diabetesDuration', 'gender') 
 
     # Rule 3: Pre-Exercise internal chronology
     historical_pre = [n for n in tiers['pre'] if n != 'startExerciseGlucoseLevel']

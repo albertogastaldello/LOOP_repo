@@ -298,8 +298,8 @@ function [aob, total_cwl, cwl_per_day, acwr] = computeACWR(curr_session, curr_ex
         end
     end
         
-    cwl_per_day = cwl/7;
-    total_cwl = cwl; % average across 7 days
+    cwl_per_day = cwl/7; % average across 7 days
+    total_cwl = cwl; 
 
     % compute ACWR
     if cwl == 0
