@@ -197,6 +197,7 @@ def discretize_data(df, cv_strategy, bmi_strategy, hba1c_strategy, glucose_strat
     if 'postExerciseTimeToNadir' in df_discrete.columns: df_discrete["postExerciseTimeToNadir"] = pd.qcut(df_discrete["postExerciseTimeToNadir"], q=3, labels=["Early Drop", "Mid Drop", "Late Drop"])
     if 'postExerciseTBR' in df_discrete.columns: df_discrete["postExerciseTBR"] = pd.cut(df_discrete["postExerciseTBR"], bins=[-np.inf, 0, 4, np.inf], labels=["Perfect", "Mild", "Risk"])
     if 'postExerciseTAR' in df_discrete.columns: df_discrete["postExerciseTAR"] = pd.cut(df_discrete["postExerciseTAR"], bins=[-np.inf, 25, 50, np.inf], labels=["Target", "Elevated", "Risk"])
+    if 'postExerciseHypoEvent' in df_discrete.columns: df_discrete["postExerciseHypoEvent"] = df_discrete["postExerciseHypoEvent"].map({0: "No", 1: "Yes"})
     if 'postExerciseAUC70' in df_discrete.columns:
         non_zero_auc = df_discrete[df_discrete['postExerciseAUC70'] > 0]['postExerciseAUC70']
         if not non_zero_auc.empty:
@@ -414,53 +415,134 @@ def apply_expert_constraints(learner, tiers):
                     if future_node in learner.names() and past_node in learner.names():
                         learner.addForbiddenArc(future_node, past_node)
 
-    # Rule 2: Root Nodes (Demographics)
+
+    # --------------------------------------------------------------
+    # Rule 2: Static Layer Hierarchy
+    absolute_roots = ['age', 'gender', 'diabetesDuration']
+    clinical_params = ['HbA1c', 'InsSensitivity', 'InsCarbRatio']
+
+    # Root nodes
     for node in tiers['static']:
-        if node not in ['age', 'gender', 'diabetesDuration'] and node in learner.names():
-            if 'age' in learner.names(): learner.addForbiddenArc(node, 'age')
-            if 'gender' in learner.names(): learner.addForbiddenArc(node, 'gender')
-            if 'diabetesDuration' in learner.names(): learner.addForbiddenArc(node, 'diabetesDuration')
-        learner.addForbiddenArc('gender', 'age')  
-        learner.addForbiddenArc('age', 'gender') 
-        learner.addForbiddenArc('diabetesDuration', 'age')
-        learner.addForbiddenArc('age', 'diabetesDuration')
-        learner.addForbiddenArc('gender', 'diabetesDuration')
-        learner.addForbiddenArc('diabetesDuration', 'gender') 
+        if node not in absolute_roots and node in learner.names():
+            for root in absolute_roots:
+                if root in learner.names():
+                    learner.addForbiddenArc(node, root)
 
-    # Rule 3: Pre-Exercise internal chronology
-    historical_pre = [n for n in tiers['pre'] if n != 'startExerciseGlucoseLevel']
-    if 'startExerciseGlucoseLevel' in learner.names():
-        for hist_feat in historical_pre:
-            if hist_feat in learner.names():
-                learner.addForbiddenArc('startExerciseGlucoseLevel', hist_feat)
+    # Root nodes cannot cause each other
+    for i in range(len(absolute_roots)):
+        for j in range(len(absolute_roots)):
+            if i != j and absolute_roots[i] in learner.names() and absolute_roots[j] in learner.names():
+                learner.addForbiddenArc(absolute_roots[i], absolute_roots[j])
 
-    for var1, var2 in itertools.combinations(historical_pre, 2):
-        if var1 in learner.names() and var2 in learner.names():
-            learner.addForbiddenArc(var1, var2)
-            learner.addForbiddenArc(var2, var1)
+    # Clinical parameters do not cause anthropometrics (BMI causes insulin resistance, not vice versa)
+    for param in clinical_params:
+        if param in learner.names() and 'BMI' in learner.names():
+            learner.addForbiddenArc(param, 'BMI')
 
-    # Rule 4: Exercise internal (Simultaneous)
-    exercise_layer = [n for n in tiers['exercise']]
-    for var1, var2 in itertools.combinations(exercise_layer, 2):
-        if var1 in learner.names() and var2 in learner.names():
-            learner.addForbiddenArc(var1, var2)
-            learner.addForbiddenArc(var2, var1)
+    # --------------------------------------------------------------
+    # Rule 3: Pre-Exercise 
+    drivers = ['IOBnorm', 'COBnorm', 'AOB', 'TotalCWL']
+    dynamics = ['preExerciseRoc', 'preExerciseGlucoseCV']
+    endpoint = 'startExerciseGlucoseLevel'
 
+    # Glucose metrics (dynamics & endpoint) cannot cause the prior actions/drivers
+    for var in dynamics + [endpoint]:
+        if var in learner.names():
+            for driver in drivers:
+                if driver in learner.names():
+                    learner.addForbiddenArc(var, driver)
+
+    # The final starting glucose cannot cause the trajectory that led up to it
+    if endpoint in learner.names():
+        for dyn in dynamics:
+            if dyn in learner.names():
+                learner.addForbiddenArc(endpoint, dyn)
+
+    # Drivers do not cause each other (e.g., taking insulin doesn't cause you to have eaten carbs)
+    for driver1, driver2 in itertools.combinations(drivers, 2):
+        if driver1 in learner.names() and driver2 in learner.names():
+            learner.addForbiddenArc(driver1, driver2)
+            learner.addForbiddenArc(driver2, driver1)
+
+    # Dynamics do not cause each other (Variance doesn't cause Velocity)
+    if 'preExerciseRoc' in learner.names() and 'preExerciseGlucoseCV' in learner.names():
+        learner.addForbiddenArc('preExerciseRoc', 'preExerciseGlucoseCV')
+        learner.addForbiddenArc('preExerciseGlucoseCV', 'preExerciseRoc')
+
+    # --------------------------------------------------------------
+    # Rule 4: Exercise layer
+    modality = 'ExerciseModality'
+    exercise_params = ['MET', 'DurationValue', 'MET_min']
+
+   # Parameters (Time/Intensity) cannot cause the Modality 
+    if modality in learner.names():
+        for param in exercise_params:
+            if param in learner.names():
+                learner.addForbiddenArc(param, modality)
+
+    # MET and Duration do not strictly cause each other (they are parallel restrictions of Modality)
+    # We forbid them from pointing to each other to keep the causal graph clean.
+    if 'MET' in learner.names() and 'DurationValue' in learner.names():
+        learner.addForbiddenArc('MET', 'DurationValue')
+        learner.addForbiddenArc('DurationValue', 'MET')
+
+
+    # --------------------------------------------------------------
     # Rule 5: Outcome Chronology (During vs Post)
+    # PART A: Inter-Layer Strict Time Travel Prevention (Post cannot cause During)
+    # ---------------------------------------------------------
     for post_metric in tiers['outcome_post']:
         for during_metric in tiers['outcome_during']:
             if post_metric in learner.names() and during_metric in learner.names():
                 learner.addForbiddenArc(post_metric, during_metric)
-                
-    for var1, var2 in itertools.combinations(tiers['outcome_during'], 2):
-        if var1 in learner.names() and var2 in learner.names():
-            learner.addForbiddenArc(var1, var2)
-            learner.addForbiddenArc(var2, var1)
-            
-    for var1, var2 in itertools.combinations(tiers['outcome_post'], 2):
-        if var1 in learner.names() and var2 in learner.names():
-            learner.addForbiddenArc(var1, var2)
-            learner.addForbiddenArc(var2, var1)
+
+    # ---------------------------------------------------------
+    # PART B: 'During Exercise' Internal Hierarchy
+    # ---------------------------------------------------------
+    during_dynamics = ['exerciseMaxSpikeRoc', 'exerciseMaxDropRoc']
+    during_extremes = ['exercisePeak', 'exerciseNadir', 'exerciseMaxExcursion']
+    during_aggregates = ['exerciseTIR', 'exerciseTBR', 'exerciseAUC70']
+
+    # Aggregates cannot cause Extremes or Dynamics
+    for agg in during_aggregates:
+        if agg in learner.names():
+            for ext in during_extremes:
+                if ext in learner.names(): learner.addForbiddenArc(agg, ext)
+            for dyn in during_dynamics:
+                if dyn in learner.names(): learner.addForbiddenArc(agg, dyn)
+
+    # Extremes cannot cause Dynamics
+    for ext in during_extremes:
+        if ext in learner.names():
+            for dyn in during_dynamics:
+                if dyn in learner.names(): learner.addForbiddenArc(ext, dyn)
+
+    # Forbid tautologies within mathematical subgroups 
+    # (e.g. TBR doesn't cause AUC, they happen simultaneously)
+    for group in [during_dynamics, during_extremes, during_aggregates]:
+        for var1, var2 in itertools.combinations(group, 2):
+            if var1 in learner.names() and var2 in learner.names():
+                learner.addForbiddenArc(var1, var2)
+                learner.addForbiddenArc(var2, var1)
+
+    # ---------------------------------------------------------
+    # PART C: 'Post Exercise' Internal Hierarchy
+    # ---------------------------------------------------------
+    post_extremes = ['maxGlucosePostExercise', 'minGlucosePostExercise', 'postExerciseTimeToNadir']
+    post_aggregates = ['postExerciseTIR', 'postExerciseTBR', 'postExerciseTAR', 'postExerciseAUC70', 'postExerciseGlucoseCV', 'postExerciseHypoEvent']
+
+    # Aggregates/Variance cannot cause Extremes or Timing
+    for agg in post_aggregates:
+        if agg in learner.names():
+            for ext in post_extremes:
+                if ext in learner.names(): learner.addForbiddenArc(agg, ext)
+
+    # Forbid tautologies within mathematical subgroups
+    for group in [post_extremes, post_aggregates]:
+        for var1, var2 in itertools.combinations(group, 2):
+            if var1 in learner.names() and var2 in learner.names():
+                learner.addForbiddenArc(var1, var2)
+                learner.addForbiddenArc(var2, var1)
 
     return learner
 
@@ -469,11 +551,22 @@ def apply_expert_constraints(learner, tiers):
 # ==========================================
 def visualize_network(bn, tiers):
     """Renders the Bayesian Network using a colorblind-safe Okabe-Ito palette."""
+
+    gum.config['notebook', 'graph_format'] = 'png'
+
     dot_lines = [
         "digraph ExpertCausalModel {", 
         '  rankdir="TB";', 
-        '  node [style="filled", shape="ellipse", fontname="Helvetica", margin="0.1"];'
+        
+        # FIX 1: Increase graph resolution (dpi) and physical spacing
+        # nodesep = horizontal spacing, ranksep = vertical spacing
+        '  graph [dpi=300, nodesep=0.6, ranksep=0.8];', 
+        
+        # FIX 2: Increase font size and the margin (padding) inside the ellipses
+        '  node [style="filled", shape="box", style="filled,rounded", fontname="Helvetica", fontsize=14, margin="0.25,0.15"];'
     ]
+
+    
 
     for node in bn.names():
         if node in tiers['static']:
