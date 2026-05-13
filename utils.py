@@ -107,7 +107,10 @@ def discretize_data(df, cv_strategy, bmi_strategy, hba1c_strategy, glucose_strat
     cv_cols = [col for col in ['preExerciseGlucoseCV', 'postExerciseGlucoseCV'] if col in df_discrete.columns]
     for col in cv_cols:
         if cv_strategy == "statistical":
-            df_discrete[col] = pd.qcut(df_discrete[col], q=3, labels=["Low Variance", "Medium Variance", "High Variance"], duplicates='drop')
+            discrete_series_cv, thresholds = pd.qcut(df_discrete[col], q=3, 
+                labels=["Low Variance", "Medium Variance", "High Variance"], duplicates='drop',retbins=True)
+            df_discrete[col] = discrete_series_cv
+            print(f"   - {col} thresholds: {thresholds}")
         elif cv_strategy == "clinical":
             df_discrete[col] = pd.cut(df_discrete[col], bins=[0, 36, np.inf], labels=["Stable", "Unstable"])
 
@@ -317,7 +320,7 @@ def collapse_sparse_bins(df):
     
     print("\n🔨 Collapsing sparse bins to optimize the Bayesian Network...")
 
-    # 1. BMI: Group extremes to ensure statistical power
+    # BMI
     if 'BMI' in clean_df.columns:
         clean_df['BMI'] = clean_df['BMI'].replace(
             {'Underweight': 'Healthyweight/Underweight', 
@@ -326,26 +329,55 @@ def collapse_sparse_bins(df):
              'Overweight': 'Overweight/Obese'}
         )
 
-    # 2. Rate of Change (Both Pre and During): Merge 'Rapidly' into standard directions
-    for col in ['preExerciseRoc', 'exerciseGlucoseRoc']:
-        if col in clean_df.columns:
-            clean_df[col] = clean_df[col].replace(
-                {'Rapidly Rising': 'Rising', 'Rapidly Falling': 'Falling'}
-            )
-
-    # 3. startExerciseGlucoseLevel: Merge the 4.1% 'Very High' into 'Elevated'
+    # startExerciseGlucoseLevel
     if 'startExerciseGlucoseLevel' in clean_df.columns:
         clean_df['startExerciseGlucoseLevel'] = clean_df['startExerciseGlucoseLevel'].replace(
             {'Very High': 'Elevated'}
         )
         
-    # 4. minGlucosePostExercise: Merge the 1.4% 'Elevated' into 'Target' (since it's a post-exercise recovery context)
+    # minGlucosePostExercise
     if 'minGlucosePostExercise' in clean_df.columns:
         clean_df['minGlucosePostExercise'] = clean_df['minGlucosePostExercise'].replace(
-            {'Elevated': 'Target'}
+            {'Elevated': 'Not Hypo', 'Target': 'Not Hypo'}
         )
 
-    print("✅ Bin collapsing complete! Dataset is mathematically safe.")
+    # exerciseTIR
+    if 'exerciseTIR' in clean_df.columns:
+        clean_df['exerciseTIR'] = clean_df['exerciseTIR'].replace(
+            {'Borderline': 'Poor'}
+        )
+
+    # exercise TBR
+    if 'exerciseTBR' in clean_df.columns:
+        clean_df['exerciseTBR'] = clean_df['exerciseTBR'].replace(
+            {'Mild': 'Risk'}
+        )
+
+    # max Glucose Post Exercise
+    if 'maxGlucosePostExercise' in clean_df.columns:
+        clean_df['maxGlucosePostExercise'] = clean_df['maxGlucosePostExercise'].replace(
+            {'Hypo': 'Target'}
+        )
+
+    # postExerciseTIR
+    if 'postExerciseTIR' in clean_df.columns:
+        clean_df['postExerciseTIR'] = clean_df['postExerciseTIR'].replace(
+            {'Borderline': 'Poor'}
+        )
+
+    # postExercise TBR
+    if 'postExerciseTBR' in clean_df.columns:
+        clean_df['postExerciseTBR'] = clean_df['postExerciseTBR'].replace(
+            {'Mild': 'Risk'}
+        )
+
+    # postExercise TAR
+    if 'postExerciseTAR' in clean_df.columns:
+        clean_df['postExerciseTAR'] = clean_df['postExerciseTAR'].replace(
+            {'Elevated': 'Risk'}
+        )
+
+   
     return clean_df
 
 
