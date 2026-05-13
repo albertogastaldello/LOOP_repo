@@ -77,15 +77,22 @@ function exerciseForBN()
             maxDropRoc = 0;
         end
 
+        exerciseHypoEvent = double(any(ex_glucose < 70));
+
         % glucose TBR and TIR during exercise
         if total_duration > 0
+
+            dt_full = [dt_minutes(:); median(dt_minutes(:))];
+
+            calc_duration = sum(dt_full);
+
             % Logical arrays: Was the glucose below 70 at the start of this interval?
-            idx_below_70 = ex_glucose(1:end-1) < 70;
-            idx_in_range = ex_glucose(1:end-1) >= 70 & ex_glucose(1:end-1) <= 180;
+            idx_below_70 = ex_glucose < 70;
+            idx_in_range = ex_glucose >= 70 & ex_glucose <= 180;
             
             % Sum the time (in minutes) spent in those states, divide by total time
-            ex_TBR = (sum(dt_minutes(idx_below_70)) / total_duration) * 100;
-            ex_TIR = (sum(dt_minutes(idx_in_range)) / total_duration) * 100;
+            ex_TBR = (sum(dt_full(idx_below_70)) / calc_duration) * 100;
+            ex_TIR = (sum(dt_full(idx_in_range)) / calc_duration) * 100;
         else
             ex_TBR = 0;
             ex_TIR = 0;
@@ -133,19 +140,20 @@ function exerciseForBN()
         % Range Metrics (TIR, TBR, TAR)
         if length(post_time) > 1
             dt_post = minutes(diff(post_time));
-            total_post_time = sum(dt_post);
+            dt_full_post = [dt_post; median(dt_post)];
+            total_post_time = sum(dt_full_post);
             
-            idx_TIR = post_glucose(1:end-1) >= 70 & post_glucose(1:end-1) <= 180;
-            idx_TBR = post_glucose(1:end-1) < 70;
-            idx_TAR = post_glucose(1:end-1) > 180;
+            idx_TIR = post_glucose(:) >= 70 & post_glucose(:) <= 180;
+            idx_TBR = post_glucose(:) < 70;
+            idx_TAR = post_glucose(:) > 180;
             
-            postExerciseTIR = (sum(dt_post(idx_TIR)) / total_post_time) * 100;
-            postExerciseTBR = (sum(dt_post(idx_TBR)) / total_post_time) * 100;
-            postExerciseTAR = (sum(dt_post(idx_TAR)) / total_post_time) * 100;
+            postExerciseTIR = (sum(dt_full_post(idx_TIR)) / total_post_time) * 100;
+            postExerciseTBR = (sum(dt_full_post(idx_TBR)) / total_post_time) * 100;
+            postExerciseTAR = (sum(dt_full_post(idx_TAR)) / total_post_time) * 100;
             
             % Area Under the Curve (AUC < 70)
-            time_numeric_post = minutes(post_time - post_time(1));
-            cgm_deficit_post = max(0, 70 - post_glucose);
+            time_numeric_post = minutes(post_time(:) - post_time(1));
+            cgm_deficit_post = max(0, 70 - post_glucose(:));
             postExerciseAUC70 = trapz(time_numeric_post, cgm_deficit_post);
             
         else
@@ -164,6 +172,7 @@ function exerciseForBN()
         curr_session.exerciseTIR = ex_TIR;
         curr_session.exerciseTBR = ex_TBR;
         curr_session.exerciseAUC70 = ex_AUC70;
+        curr_session.exerciseHypoEvent = exerciseHypoEvent;
         
         curr_session.maxGlucosePostExercise = maxGlucosePostExercise;
         curr_session.minGlucosePostExercise = minGlucosePostExercise;
@@ -173,6 +182,7 @@ function exerciseForBN()
         curr_session.postExerciseTAR = postExerciseTAR;
         curr_session.postExerciseGlucoseCV = postExerciseGlucoseCV;
         curr_session.postExerciseAUC70 = postExerciseAUC70;
+        curr_session.postExerciseHypoEvent = postExerciseHypoEvent;
         
         % update the current row of exercise table
         exerciseTableForBN = [exerciseTableForBN; curr_session];
