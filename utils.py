@@ -481,7 +481,6 @@ def apply_expert_constraints(learner, tiers):
                 learner.addForbiddenArc(param, modality)
 
     # MET and Duration do not strictly cause each other (they are parallel restrictions of Modality)
-    # We forbid them from pointing to each other to keep the causal graph clean.
     if 'MET' in learner.names() and 'DurationValue' in learner.names():
         learner.addForbiddenArc('MET', 'DurationValue')
         learner.addForbiddenArc('DurationValue', 'MET')
