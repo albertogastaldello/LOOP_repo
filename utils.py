@@ -5,6 +5,9 @@ import itertools
 import numpy as np
 import matplotlib.pyplot as plt
 import plotly.express as px
+import ipywidgets as widgets
+from IPython.display import display, clear_output
+
 
 
 # ==========================================
@@ -589,3 +592,97 @@ def visualize_network(bn, tiers):
 
     dot_lines.append("}")
     gnb.showDot("\n".join(dot_lines))
+
+
+# ==========================================
+# INFERENCE EXAMPLE
+# =========================================
+
+def interactive_inference_dashboard(bn, evidence_nodes, target_node):
+    """
+    Generates an interactive ipywidgets dashboard for a pyAgrum Bayesian Network.
+    
+    Parameters:
+    bn (gum.BayesNet): Your trained Bayesian Network.
+    evidence_nodes (list of str): The names of the features you want to act as inputs (dropdowns).
+    target_node (str): The name of the outcome feature you want to visualize.
+    """
+    # 1. Initialize the Inference Engine
+    ie = gum.LazyPropagation(bn)
+
+    # 2. Extract Target States
+    target_states = list(bn.variableFromName(target_node).labels())
+
+    # 3. Dynamically Generate Dropdowns for Evidence Nodes
+    dropdowns = {}
+    for node in evidence_nodes:
+        # Extract states for this specific node directly from the network
+        states = list(bn.variableFromName(node).labels())
+        
+        # Create the widget
+        dropdown = widgets.Dropdown(
+            options=['Not Fixed'] + states,
+            description=f'{node}:',
+            style={'description_width': 'initial'}
+        )
+        dropdowns[node] = dropdown
+
+    # 4. Create the Output Plot Area
+    out_plot = widgets.Output()
+
+    # 5. The Dynamic Update Function
+    def update_dashboard(*args):
+        with out_plot:
+            clear_output(wait=True)
+            ie.eraseAllEvidence()
+            
+            # Dynamically inject evidence from all generated dropdowns
+            for node_name, dropdown_widget in dropdowns.items():
+                if dropdown_widget.value != 'Not Fixed':
+                    ie.addEvidence(node_name, dropdown_widget.value)
+                    
+            # Perform Inference
+            ie.makeInference()
+            posterior = ie.posterior(target_node)
+            
+            # Extract probabilities
+            probs = [posterior[i] * 100 for i in range(len(target_states))]
+            
+            # Draw the Chart
+            plt.figure(figsize=(8, 4))
+            bars = plt.bar(target_states, probs, color='#2ca02c', edgecolor='black')
+            plt.ylim(0, 100)
+            plt.ylabel('Probability (%)', fontsize=12)
+            plt.title(f'Predicted Outcome: {target_node}', fontsize=14, fontweight='bold')
+            plt.grid(axis='y', linestyle='--', alpha=0.7)
+            
+            # Add percentage labels
+            for bar in bars:
+                yval = bar.get_height()
+                plt.text(bar.get_x() + bar.get_width()/2, yval + 1.5, f'{yval:.1f}%', 
+                         ha='center', va='bottom', fontweight='bold')
+                
+            # Clean layout
+            plt.gca().spines['top'].set_visible(False)
+            plt.gca().spines['right'].set_visible(False)
+            plt.tight_layout()
+            plt.show()
+
+    # 6. Bind the Observers
+    for dropdown_widget in dropdowns.values():
+        dropdown_widget.observe(update_dashboard, names='value')
+
+    # 7. Group the UI Elements dynamically
+    # We use HBox for the dropdowns. If there are many, it might be better to wrap them, 
+    # but HBox works great for 3-5 variables.
+    dropdown_container = widgets.HBox(list(dropdowns.values()))
+    
+    ui = widgets.VBox([
+        widgets.HTML(f"<h3>Dynamic Inference: Impact on <i>{target_node}</i></h3>"),
+        dropdown_container,
+        out_plot
+    ])
+
+    # 8. Display and initialize
+    display(ui)
+    update_dashboard()
