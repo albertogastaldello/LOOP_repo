@@ -2,7 +2,6 @@ function exerciseWithWearableData()
 
     % Load filtered exercise table
     exercise = load("exerciseTable_filtered.mat").exerciseTable_clean;
-    exercise(exercise.DurationValue < 10, :) = [];
     
     base_path = '/Users/albertogastaldello/Desktop/PAxT1D_BN/LOOP_Data/Loop study public dataset 2023-01-31';
     subjectsStruct = load("dataTablesStructure_withDateTime.mat").data_tables_all;
@@ -26,7 +25,7 @@ function exerciseWithWearableData()
     exercise_valid.COB = zeros(0,1);
     exercise_valid.COBnorm = zeros(0,1);
 
-    hoursPreExercise = 8;
+    hoursPreExercise = 2;
     hoursPostExercise = 6;
 
     

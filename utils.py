@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import plotly.express as px
 import ipywidgets as widgets
 from IPython.display import display, clear_output
+import os
+from pathlib import Path
 
 
 
@@ -163,7 +165,10 @@ def discretize_data(df, cv_strategy, bmi_strategy, hba1c_strategy, glucose_strat
     if 'IOB' in df_discrete.columns: df_discrete["IOB"] = pd.cut(df_discrete["IOB"], bins=[-np.inf, -0.2, 0.2, 2, np.inf], labels=["Negative", "Baseline", "Moderate", "High"])
     if 'COB' in df_discrete.columns: df_discrete["COB"] = pd.qcut(df_discrete["COB"], q=4, labels=["Low", "Moderate", "High", "Very High"], duplicates='drop')
     if 'IOBnorm' in df_discrete.columns: df_discrete["IOBnorm"] = pd.qcut(df_discrete["IOBnorm"], q=3, labels=["Low Impact", "Medium Impact", "High Impact"], duplicates='drop')
-    if 'COBnorm' in df_discrete.columns: df_discrete["COBnorm"] = pd.qcut(df_discrete["COBnorm"], q=3, labels=["Low Carb Load", "Medium Carb Load", "High Carb Load"], duplicates='drop')
+    if 'COBnorm' in df_discrete.columns: 
+        bins = pd.qcut(df_discrete["COBnorm"], q=3, duplicates='drop')
+        df_discrete["COBnorm"] = bins.cat.rename_categories([f"Carb Load Bin {i+1}" for i in range(len(bins.cat.categories))]
+    )
     
     if 'AOB' in df_discrete.columns: df_discrete["AOB"] = pd.qcut(df_discrete["AOB"], q=3, labels=["Low AOB", "Medium AOB", "High AOB"], duplicates='drop')
     if 'TotalCWL' in df_discrete.columns: df_discrete["TotalCWL"] = pd.qcut(df_discrete["TotalCWL"], q=3, labels=["Low CWL", "Medium CWL", "High CWL"], duplicates='drop')
@@ -222,11 +227,16 @@ def discretize_data(df, cv_strategy, bmi_strategy, hba1c_strategy, glucose_strat
 # DISTRIBUTION PLOT
 # =========================================
 
-def plot_single_feature_distribution(df, feature_name, title_prefix="", save_png=False):
+def plot_single_feature_distribution(df, feature_name, title_prefix="", show_png = False, save_png=True):
     """
     Plots an interactive horizontal bar chart for a single specified feature using Plotly.
     Includes the Okabe-Ito colorblind-safe palette and saves to PNG if requested.
     """
+
+    base_dir = Path().resolve()
+    save_dir = base_dir / "images" / "featuresDistribution"
+    save_dir.mkdir(parents=True, exist_ok=True)
+
     if feature_name not in df.columns:
         print(f"Error: Feature '{feature_name}' not found in the dataset.")
         return
@@ -296,19 +306,30 @@ def plot_single_feature_distribution(df, feature_name, title_prefix="", save_png
     )
 
     # 5. Display the interactive chart
-    fig.show()
+    if show_png:
+        fig.show()
     
-    '''
+    
     # 6. Save as High-Res PNG if requested
     if save_png:
         # Clean the feature name just in case it has weird characters
         safe_name = "".join([c for c in feature_name if c.isalnum() or c in ('_', '-')]).rstrip()
-        filename = f"distribution_{safe_name}.png"
+        if title_prefix == "- Clinical Thresholds":
+            filename = f"{safe_name}_clinical.png"
+
+        if title_prefix == "- Clinical Thresholds After Merge":
+            filename = f"{safe_name}_clinical_merge.png"
         
-        # scale=3 acts like 'dpi=300' in matplotlib, making the image crisp for presentations
-        fig.write_image(filename, scale=3)
-        print(f"✅ High-resolution image saved locally as '{filename}'")
-    '''
+        if title_prefix == "- Statistical Thresholds":
+            filename = f"{safe_name}_statistical.png"
+
+        if title_prefix == "- Statistical Thresholds After Merge":
+            filename = f"{safe_name}_statistical_merge.png"
+        
+        full_path = save_dir / filename
+        fig.write_image(full_path, scale=3)
+        
+    
 
 
 # ==========================================

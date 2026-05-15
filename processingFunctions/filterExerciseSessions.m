@@ -92,6 +92,7 @@ function stats = filterExerciseSessions()
     stats.ByFilter.Duplicates = totalRemovedDup;
     stats.ByFilter.Contained  = totalRemovedContained;
     stats.ByFilter.Overlap    = totalRemovedOverlap;
+    stats.ByFilter.ShortDuration = totalRemovedShortDuration;
     
     % save filtered exercise table
     tables_path = '/Users/albertogastaldello/Desktop/PAxT1D_BN/LOOP_repo/tables/';
