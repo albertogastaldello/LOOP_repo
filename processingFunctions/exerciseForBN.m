@@ -76,8 +76,18 @@ function exerciseForBN()
             maxSpikeRoc = 0;
             maxDropRoc = 0;
         end
-
+        
+        % hypo event during exercise
         exerciseHypoEvent = double(any(ex_glucose < 70));
+
+        % time to hypo event during exercise (NaN if no hypo event)
+        if exerciseHypoEvent == 1
+            idxHypoEvent = find(ex_glucose < 70, 1, 'first');
+            timeHypoEvent = ex_time(idxHypoEvent);
+            timeToExerciseHypoEvent = minutes(timeHypoEvent - startSession);
+        else
+            timeToExerciseHypoEvent = NaN;
+        end
 
         % glucose TBR and TIR during exercise
         if total_duration > 0
@@ -134,8 +144,17 @@ function exerciseForBN()
         % Time-to-Event Metric 
         postExercise_timeToNadir = minutes(post_time(min_idx) - post_time(1));
         
-        % Binary Hypo Target: 1 if they crashed, 0 if they stayed safe
+        % Post Exercise Hypo Event
         postExerciseHypoEvent = double(any(post_glucose < 70));
+
+        % Time to Post Exercise Hypo Event (NaN if no hypo event)
+        if postExerciseHypoEvent == 1
+            idxPostHypoEvent = find(post_glucose < 70, 1, 'first');
+            timePostHypoEvent = post_time(idxPostHypoEvent);
+            timeToPostExerciseHypoEvent = minutes(timePostHypoEvent - endSession);
+        else
+            timeToPostExerciseHypoEvent = NaN;
+        end
     
         % Range Metrics (TIR, TBR, TAR)
         if length(post_time) > 1
@@ -173,6 +192,7 @@ function exerciseForBN()
         curr_session.exerciseTBR = ex_TBR;
         curr_session.exerciseAUC70 = ex_AUC70;
         curr_session.exerciseHypoEvent = exerciseHypoEvent;
+        curr_session.timeToExerciseHypoEvent = timeToExerciseHypoEvent;
         
         curr_session.maxGlucosePostExercise = maxGlucosePostExercise;
         curr_session.minGlucosePostExercise = minGlucosePostExercise;
@@ -183,6 +203,7 @@ function exerciseForBN()
         curr_session.postExerciseGlucoseCV = postExerciseGlucoseCV;
         curr_session.postExerciseAUC70 = postExerciseAUC70;
         curr_session.postExerciseHypoEvent = postExerciseHypoEvent;
+        curr_session.timeToPostExerciseHypoEvent = timeToPostExerciseHypoEvent;
         
         % update the current row of exercise table
         exerciseTableForBN = [exerciseTableForBN; curr_session];
