@@ -58,7 +58,7 @@ function stats = filterExerciseSessions()
             handlePartialOverlap(curr_sessions_removedContained, pairCounterOverlap, overlapLog);
         totalRemovedOverlap = totalRemovedOverlap + (countBefore4 - height(curr_sessions_removedOverlap));
 
-        % ===== STEP 5: REMOVE SESSIONS WITH DURATION LESS THAN 5 MINUTES
+        % ===== STEP 5: REMOVE SESSIONS WITH DURATION LESS THAN 10 MINUTES
         countBefore5 = height(curr_sessions_removedOverlap);
         [curr_sessions_removedShortDuration, shortDurationLog] = ...
             removeShortDuration(curr_sessions_removedOverlap, shortDurationLog);
@@ -237,7 +237,7 @@ end
 
 % REMOVE SHORT DURATION SESSIONS
 function [curr_sessions, shortDurationLog] = removeShortDuration(curr_sessions, shortDurationLog)
-    shortDurationIndices = find(curr_sessions.DurationValue < 5);
+    shortDurationIndices = find(curr_sessions.DurationValue < 10);
     if ~isempty(shortDurationIndices)
         shortDurationLog = [shortDurationLog; curr_sessions(shortDurationIndices,:)];
         curr_sessions(shortDurationIndices,:) = [];

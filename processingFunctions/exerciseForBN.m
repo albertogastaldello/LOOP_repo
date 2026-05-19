@@ -133,6 +133,9 @@ function exerciseForBN()
         % Extract Post-Exercise Arrays safely
         post_time = cgmPostExercise.Time(1:idx6HoursPostSession);
         post_glucose = cgmPostExercise.Glucose(1:idx6HoursPostSession);
+
+        % Glucose at the end of exercise
+        endExerciseGlucoseLevel = cgmPostExercise.Glucose(1);
     
         % Max and Min glucose
         [minGlucosePostExercise, min_idx] = min(post_glucose); 
@@ -193,6 +196,8 @@ function exerciseForBN()
         curr_session.exerciseAUC70 = ex_AUC70;
         curr_session.exerciseHypoEvent = exerciseHypoEvent;
         curr_session.timeToExerciseHypoEvent = timeToExerciseHypoEvent;
+
+        curr_session.endExerciseGlucoseLevel = endExerciseGlucoseLevel;
         
         curr_session.maxGlucosePostExercise = maxGlucosePostExercise;
         curr_session.minGlucosePostExercise = minGlucosePostExercise;

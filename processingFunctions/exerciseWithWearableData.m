@@ -22,8 +22,10 @@ function exerciseWithWearableData()
     exercise_valid.cgmData     = {};           % cell for CGM struct
     exercise_valid.reportedMealData = {};           % cell for meal table
     exercise_valid.finalMealData = {};
-    exercise_valid.COB = zeros(0,1);
-    exercise_valid.COBnorm = zeros(0,1);
+    % exercise_valid.COB = zeros(0,1);
+    exercise_valid.COBnormStartEx = zeros(0,1);
+    exercise_valid.COBnormEndEx = zeros(0,1);
+    exercise_valid.CHODuringEx = zeros(0,1);
 
     hoursPreExercise = 2;
     hoursPostExercise = 6;
@@ -103,6 +105,8 @@ function exerciseWithWearableData()
             curr_session.TotalCWL = total_cwl;
             curr_session.CWLPerDay = cwl_per_day;
             curr_session.ACWR = acwr;
+
+            
             
             % -------- CGM WINDOWS --------
             
@@ -171,25 +175,54 @@ function exerciseWithWearableData()
             
             % -------- INSULIN DATA --------
             
-            [curr_CF, curr_CR, curr_tslb, curr_lb, ...
-             curr_tslBasal, curr_lBasal, curr_IOB] = ...
+            [curr_CF, curr_CR, tslb_startEx, lb_startEx, ...
+             tslBasal_startEx, lBasal_startEx, IOB_startEx] = ...
                 getInsulinInfo(startExercise, curr_wizard, bolus_data, basal_data);
-            curr_IOB_normalized = curr_IOB * curr_CF;
+            IOBnorm_startEx = IOB_startEx * curr_CF;
+
+            [curr_CF, curr_CR, tslb_endEx, lb_endEx, ...
+             tslBasal_endEx, lBasal_endEx, IOB_endEx] = ...
+             getInsulinInfo(endExercise, curr_wizard, bolus_data, basal_data);
+            IOBnorm_endEx = IOB_endEx * curr_CF;
+
+            bolusDuringEx = bolus_data(bolus_data.datetime >= startExercise ...
+                & bolus_data.datetime <= endExercise, 'bolus');
+
+            basalDuringEx = basal_data(basal_data.datetime >= startExercise ...
+                & basal_data.datetime <= endExercise, :);
+
+            insulinDuringEx = computeInsulinDuringEx(bolusDuringEx, basalDuringEx, endExercise);
+
+           % if ~isempty(bolusDuringEx) | ~isempty(basalDuringEx)
             
             tmpInsulin = struct( ...
                 'InsSensitivity',curr_CF, ...
                 'InsCarbRatio',curr_CR, ...
-                'TimeSinceLastBolus',curr_tslb, ...
-                'LastBolus',curr_lb, ...
-                'TimeSinceLastBasal',curr_tslBasal, ...
-                'LastBasal',curr_lBasal, ...
-                'IOB',curr_IOB, ...
-                'IOBnorm', curr_IOB_normalized);
+                ...
+                'TimeSinceLastBolusStartEx',tslb_startEx, ...
+                'LastBolusStartEx',lb_startEx, ...
+                'TimeSinceLastBasalStartEx',tslBasal_startEx, ...
+                'LastBasalStartEx',lBasal_startEx, ...
+                'IOBStartEx',IOB_startEx, ...
+                'IOBnormStartEx', IOBnorm_startEx, ...
+                ...
+                'TimeSinceLastBolusEndEx',tslb_endEx, ...
+                'LastBolusEndEx',lb_endEx, ...
+                'TimeSinceLastBasalEndEx',tslBasal_endEx, ...
+                'LastBasalEndEx',lBasal_endEx, ...
+                'IOBEndEx',IOB_endEx, ...
+                'IOBnormEndEx', IOBnorm_endEx, ...
+                ...
+                'insulinDuringEx', insulinDuringEx);
             
             % -------- MEAL DATA --------
             
-            preMeal  = startExercise - hours(hoursPreExercise);
-            postMeal = endExercise + hours(hoursPostExercise);
+            % define window in which looking for meals
+            %preMeal  = startExercise - hours(hoursPreExercise);
+            %postMeal = endExercise + hours(hoursPostExercise);
+
+            preMeal  = startExercise - hours(6);
+            postMeal = endExercise + hours(6);
             
             idxMeal = curr_subjectMealData.UTCDtTm >= preMeal & ...
                 curr_subjectMealData.UTCDtTm <= postMeal;
@@ -201,23 +234,23 @@ function exerciseWithWearableData()
             mealTimes = curr_finalMeals.UTCDtTm;
             mealCHO = curr_finalMeals.CarbsNet;
 
+            % estimate COB norm at start and end of exercise
 
-            % mealTimes = sessionMealData.UTCDtTm;
-            % mealCHO = sessionMealData.CarbsNet;
-    
-            timeDiff = minutes(startExercise - mealTimes);
-            cobMeals = timeDiff >= 0 & timeDiff <= 360;
-    
-            dt = timeDiff(cobMeals);
-            CHO = mealCHO(cobMeals);
-    
-            f = COB(:,1); % fast
-            % f = COB(:,2); %slow
-            t_curve = 0:359;
-    
-            total_cob = sum(CHO .* interp1(t_curve, f, dt, 'linear', 0));
             weight = subjectsStruct.(struct_patientField).surveys.weight_kg(1);
-            cob_norm = total_cob / weight; 
+         
+            cob_norm_startExercise = estimateCOB(startExercise, mealTimes, mealCHO, COB, weight);
+            cob_norm_endExercise = estimateCOB(endExercise, mealTimes, mealCHO, COB, weight);
+
+            % total of carbohydrates assumed during exercise
+
+            choDuringExercise = 0;
+            idxMealsDuringExercise = find(mealTimes > startExercise & mealTimes < endExercise);
+            if ~isempty(idxMealsDuringExercise)
+                for idx=1:length(idxMealsDuringExercise)
+                    choDuringExercise = choDuringExercise + mealCHO(idxMealsDuringExercise(idx));
+                end
+            end
+
             
             % -------- APPEND SESSION --------
             
@@ -233,8 +266,10 @@ function exerciseWithWearableData()
             curr_session.reportedMealData = {sessionMealData};
             curr_session.finalMealData = {curr_finalMeals};
     
-            curr_session.COB = total_cob;
-            curr_session.COBnorm = cob_norm;
+            %curr_session.COB = total_cob;
+            curr_session.COBnormStartEx = cob_norm_startExercise;
+            curr_session.COBnormEndEx = cob_norm_endExercise;
+            curr_session.CHODuringEx = choDuringExercise;
             
             exercise_valid(counter,:) = curr_session;
             
@@ -313,7 +348,7 @@ end
 
 % getInsulinInfo function
 
-function [CF, CR, tslb, lb, tslBasal, lBasal, IOB] = getInsulinInfo(startExercise, wizard, bolus_data, basal_data)
+function [CF, CR, tslb, lb, tslBasal, lBasal, IOB] = getInsulinInfo(refTime, wizard, bolus_data, basal_data)
     CF=NaN; CR=NaN; tslb=NaN; lb=NaN; tslBasal=NaN; lBasal=NaN; IOB=NaN;
     
     basal_data(isnan(basal_data.basal_rate),:)=[];
@@ -323,11 +358,11 @@ function [CF, CR, tslb, lb, tslBasal, lBasal, IOB] = getInsulinInfo(startExercis
     
     % Wizard CF and CR
 
-    % CLOSEST IN TIME TO START EXERCISE, BEFORE OR AFTER
+    % CLOSEST IN REFERENCE TIME, BEFORE OR AFTER
     
     if ~isempty(wizard)
 
-        timeDiff = abs(wizard.UTCDtTm - startExercise);
+        timeDiff = abs(wizard.UTCDtTm - refTime);
         [~, sortedIdx] = sort(timeDiff);
     
         for k = 1:length(sortedIdx)
@@ -361,7 +396,7 @@ function [CF, CR, tslb, lb, tslBasal, lBasal, IOB] = getInsulinInfo(startExercis
 
     if isnan(IOB)
         ts = 5; 
-        time_edges = (startExercise - hours(6)) : minutes(ts) : startExercise;
+        time_edges = (refTime - hours(6)) : minutes(ts) : refTime;
         num_bins = length(time_edges) - 1;
         insulin_inputs = zeros(num_bins, 1);
         
@@ -376,7 +411,7 @@ function [CF, CR, tslb, lb, tslBasal, lBasal, IOB] = getInsulinInfo(startExercis
 
         % --- B. PROCESS NET BASAL (The Median Proxy Method) ---
         % Find the underlying scheduled basal rate using the median of the last 48 hours
-        idx_48h = basal_data.datetime >= (startExercise - hours(48)) & basal_data.datetime <= startExercise;
+        idx_48h = basal_data.datetime >= (refTime - hours(48)) & basal_data.datetime <= refTime;
         if any(idx_48h)
             % Use median to filter out temporary spikes and suspensions
             baseline_rate = median(basal_data.basal_rate(idx_48h), 'omitnan');
@@ -399,7 +434,7 @@ function [CF, CR, tslb, lb, tslBasal, lBasal, IOB] = getInsulinInfo(startExercis
                 if b < height(recent_basals)
                     end_time = recent_basals.datetime(b+1);
                 else
-                    end_time = startExercise; % Cap at exercise start
+                    end_time = refTime; % Cap at exercise start
                 end
             end
             
@@ -443,16 +478,64 @@ function [CF, CR, tslb, lb, tslBasal, lBasal, IOB] = getInsulinInfo(startExercis
 
     
     % Last bolus info
-    idx_bolus = find(bolus_data.datetime <= startExercise, 1, 'last');
+    idx_bolus = find(bolus_data.datetime <= refTime, 1, 'last');
     if ~isempty(idx_bolus)
-        tslb = minutes(startExercise - bolus_data.datetime(idx_bolus));
+        tslb = minutes(refTime - bolus_data.datetime(idx_bolus));
         lb   = bolus_data.bolus(idx_bolus);
     end
     
     % Last basal info
-    idx_basal = find(basal_data.datetime <= startExercise, 1, 'last');
+    idx_basal = find(basal_data.datetime <= refTime, 1, 'last');
     if ~isempty(idx_basal)
-        tslBasal = minutes(startExercise - basal_data.datetime(idx_basal));
+        tslBasal = minutes(refTime - basal_data.datetime(idx_basal));
         lBasal   = basal_data.basal_rate(idx_basal);
     end
+end
+
+
+
+function cob_norm = estimateCOB(refTime, mealTimes, mealCHO, COB, weight)
+
+    timeDiff = minutes(refTime - mealTimes);
+    cobMeals = timeDiff >= 0 & timeDiff <= 360;
+
+    dt = timeDiff(cobMeals);
+    CHO = mealCHO(cobMeals);
+
+    f = COB(:,1); % fast
+    % f = COB(:,2); %slow
+    t_curve = 0:359;
+
+    total_cob = sum(CHO .* interp1(t_curve, f, dt, 'linear', 0));
+
+    cob_norm = total_cob / weight; 
+
+end
+
+
+
+% function to compute the amount of insulin injected during exercise
+
+function insulinDuringEx = computeInsulinDuringEx(bolusDuringEx, basalDuringEx, endExercise)
+
+    insulinDuringEx = 0;
+    
+    % basal
+    if ~ isempty(basalDuringEx)
+        next_timestamps = [basalDuringEx.datetime(2:end); endExercise];
+        time_diffs = next_timestamps - basalDuringEx.datetime;
+        duration_hours = hours(time_diffs);
+        units_delivered = basalDuringEx.basal_rate .* duration_hours;
+        total_basal_insulin = sum(units_delivered);
+
+        insulinDuringEx = insulinDuringEx + total_basal_insulin;
+    end
+
+    % bolus
+    if ~ isempty(bolusDuringEx)
+        total_bolus_insulin = sum(bolusDuringEx);
+
+        insulinDuringEx = insulinDuringEx + total_bolus_insulin;
+    end
+
 end

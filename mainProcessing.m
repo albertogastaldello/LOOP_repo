@@ -79,7 +79,7 @@ createExerciseTable(code_path, base_path);
 
 %% 8. filterExerciseSessions.m to filter the exercise table removing 
 % duplicates, sessions completely contained in others, sessions that 
-% overlap and sessions that last less than 5 minutes. 
+% overlap and sessions that last less than 10 minutes. 
 % Compute also the average number of sessions per week for each subject.
 % The filtered exercise table is saved as exerciseTable_filtered.mat
 

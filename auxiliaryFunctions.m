@@ -7,6 +7,10 @@ close all
 addpath("auxiliaryFunctions/");
 addpath("tables/");
 
+%% create and visualize heatmap for few cgm data filtering
+
+heatmapFewCgmData();
+
 %% datasetOverview.m: load subjects of interests 
 % (all subjects, common_subjects or commonWizard_subjects) 
 % and get an overview of demographics and other general information

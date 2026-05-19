@@ -68,6 +68,11 @@
 # -------------------------------------------------------------------
 # AUXILIARY SCRIPTS TO PERFORM ANALYSIS OR GENERAL OVERVIEW
 
+# heatmapFewCgmData.m: load exerciseTable_filtered.mat and saves in a matrix
+# (cgmThresholdGridSearch.mat) the number of sessions that remain after
+# filtering for few cgm data with different thresholds. Then, it visualizes
+# the matrix with a heatmap
+
 
 # datasetOverview.m: load subjects of interests (all subjects, 
 # common_subjects or commonWizard_subjects) and get an overview of 
