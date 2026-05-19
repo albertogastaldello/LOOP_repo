@@ -85,6 +85,8 @@ def map_exercise_modality(df, activity_col_name="CleanActivityName"):
     return df_mapped
 
 
+
+
 # ==========================================
 # DATA DISCRETIZATION
 # ==========================================
@@ -133,12 +135,18 @@ def discretize_data(df, cv_strategy, bmi_strategy, hba1c_strategy, glucose_strat
         elif hba1c_strategy == "statistical":
             df_discrete["HbA1c"] = pd.qcut(df_discrete["HbA1c"], q=3, labels=["Lower HbA1c", "Medium HbA1c", "Higher HbA1c"], duplicates='drop')
 
-    # 4. Start Exercise Glucose Level
+    # 4. Start and End Exercise Glucose Level
     if 'startExerciseGlucoseLevel' in df_discrete.columns:
         if glucose_strategy == "clinical":
             df_discrete["startExerciseGlucoseLevel"] = pd.cut(df_discrete["startExerciseGlucoseLevel"], bins=[0, 70, 180, 250, np.inf], labels=["Hypo Risk", "Target", "Elevated", "Very High"])
         elif glucose_strategy == "statistical":
             df_discrete["startExerciseGlucoseLevel"] = pd.qcut(df_discrete["startExerciseGlucoseLevel"], q=3, labels=["Lower Glucose", "Target/Medium", "Higher Glucose"], duplicates='drop')
+
+    if 'endExerciseGlucoseLevel' in df_discrete.columns:
+        if glucose_strategy == "clinical":
+            df_discrete["endExerciseGlucoseLevel"] = pd.cut(df_discrete["endExerciseGlucoseLevel"], bins=[0, 70, 180, 250, np.inf], labels=["Hypo Risk", "Target", "Elevated", "Very High"])
+        elif glucose_strategy == "statistical":
+            df_discrete["endExerciseGlucoseLevel"] = pd.qcut(df_discrete["endExerciseGlucoseLevel"], q=3, labels=["Lower Glucose", "Target/Medium", "Higher Glucose"], duplicates='drop')
 
     # 5. Glucose Rate of Change
 
@@ -162,12 +170,12 @@ def discretize_data(df, cv_strategy, bmi_strategy, hba1c_strategy, glucose_strat
     if 'weight' in df_discrete.columns: df_discrete["weight"] = pd.qcut(df_discrete["weight"], q=3, labels=["Lighter", "Average", "Heavier"], duplicates='drop')
     if 'InsSensitivity' in df_discrete.columns: df_discrete["InsSensitivity"] = pd.qcut(df_discrete["InsSensitivity"], q=3, labels=["Low", "Medium", "High"], duplicates='drop')
     if 'InsCarbRatio' in df_discrete.columns: df_discrete["InsCarbRatio"] = pd.qcut(df_discrete["InsCarbRatio"], q=3, labels=["Low", "Medium", "High"], duplicates='drop')
-    if 'IOB' in df_discrete.columns: df_discrete["IOB"] = pd.cut(df_discrete["IOB"], bins=[-np.inf, -0.2, 0.2, 2, np.inf], labels=["Negative", "Baseline", "Moderate", "High"])
+    if 'IOBStartEx' in df_discrete.columns: df_discrete["IOBStartEx"] = pd.cut(df_discrete["IOBStartEx"], bins=[-np.inf, -0.2, 0.2, 2, np.inf], labels=["Negative", "Baseline", "Moderate", "High"])
     if 'COB' in df_discrete.columns: df_discrete["COB"] = pd.qcut(df_discrete["COB"], q=4, labels=["Low", "Moderate", "High", "Very High"], duplicates='drop')
-    if 'IOBnorm' in df_discrete.columns: df_discrete["IOBnorm"] = pd.qcut(df_discrete["IOBnorm"], q=3, labels=["Low Impact", "Medium Impact", "High Impact"], duplicates='drop')
-    if 'COBnorm' in df_discrete.columns: 
-        bins = pd.qcut(df_discrete["COBnorm"], q=3, duplicates='drop')
-        df_discrete["COBnorm"] = bins.cat.rename_categories([f"Carb Load Bin {i+1}" for i in range(len(bins.cat.categories))]
+    if 'IOBnormStartEx' in df_discrete.columns: df_discrete["IOBnormStartEx"] = pd.qcut(df_discrete["IOBnormStartEx"], q=3, labels=["Low Impact", "Medium Impact", "High Impact"], duplicates='drop')
+    if 'COBnormStartEx' in df_discrete.columns: 
+        bins = pd.qcut(df_discrete["COBnormStartEx"], q=3, duplicates='drop')
+        df_discrete["COBnormStartEx"] = bins.cat.rename_categories([f"Carb Load Bin {i+1}" for i in range(len(bins.cat.categories))]
     )
     
     if 'AOB' in df_discrete.columns: df_discrete["AOB"] = pd.qcut(df_discrete["AOB"], q=3, labels=["Low AOB", "Medium AOB", "High AOB"], duplicates='drop')
@@ -178,6 +186,22 @@ def discretize_data(df, cv_strategy, bmi_strategy, hba1c_strategy, glucose_strat
     if 'DurationValue' in df_discrete.columns: df_discrete["DurationValue"] = pd.cut(df_discrete["DurationValue"], bins=[0, 30, 60, np.inf], labels=["Short", "Medium", "Long"])
     if 'MET_min' in df_discrete.columns: df_discrete["MET_min"] = pd.qcut(df_discrete["MET_min"], q=3, labels=["Low", "Medium", "High"], duplicates='drop')
     if 'EnergyPerMinute' in df_discrete.columns: df_discrete["EnergyPerMinute"] = pd.qcut(df_discrete["EnergyPerMinute"], q=3, labels=["Low", "Medium", "High"], duplicates='drop')
+
+    if 'CHODuringEx' in df_discrete.columns: 
+        bins = pd.qcut(df_discrete["CHODuringEx"], q=3, duplicates='drop')
+        df_discrete["CHODuringEx"] = bins.cat.rename_categories([f"Carb Load Bin {i+1}" for i in range(len(bins.cat.categories))]
+    )
+    if 'InsulinDuringEx' in df_discrete.columns: 
+        bins = pd.qcut(df_discrete["InsulinDuringEx"], q=3, duplicates='drop')
+        df_discrete["InsulinDuringEx"] = bins.cat.rename_categories([f"Insulin Load Bin {i+1}" for i in range(len(bins.cat.categories))])
+
+    if 'IOBnormEndEx' in df_discrete.columns: df_discrete["IOBnormEndEx"] = pd.qcut(df_discrete["IOBnormEndEx"], q=3, labels=["Low Impact", "Medium Impact", "High Impact"], duplicates='drop')
+    if 'COBnormEndEx' in df_discrete.columns: 
+        bins = pd.qcut(df_discrete["COBnormEndEx"], q=3, duplicates='drop')
+        df_discrete["COBnormEndEx"] = bins.cat.rename_categories([f"Carb Load Bin {i+1}" for i in range(len(bins.cat.categories))]
+    )
+
+
     
     if 'exerciseMaxExcursion' in df_discrete.columns: df_discrete["exerciseMaxExcursion"] = pd.qcut(df_discrete["exerciseMaxExcursion"], q=3, labels=["Small", "Medium", "Large"], duplicates='drop')
     if 'exerciseMaxSpikeRoc' in df_discrete.columns: df_discrete["exerciseMaxSpikeRoc"] = pd.cut(df_discrete["exerciseMaxSpikeRoc"], bins=[-np.inf, 1, 2, np.inf], labels=["Stable", "Moderate Rise", "Rapide Rise"])
@@ -429,8 +453,7 @@ def check_discretization(df, lower_bound=5.0, upper_bound=85.0):
 # ==========================================
 def apply_expert_constraints(learner, tiers):
     """Applies strict temporal and biological rules to the BN Learner."""
-    time_tiers = [tiers['static'], tiers['pre'], tiers['exercise'], tiers['outcome_during'] + tiers['outcome_post']]
-    
+    time_tiers = [tiers['static'], tiers['pre'], tiers['exercise'],  tiers['outcome_during'], tiers['end_exercise'], tiers['outcome_post']]
     # Rule 1: No backward time travel
     for i in range(len(time_tiers)):
         for j in range(i):
@@ -443,7 +466,7 @@ def apply_expert_constraints(learner, tiers):
     # --------------------------------------------------------------
     # Rule 2: Static Layer Hierarchy
     absolute_roots = ['age', 'gender', 'diabetesDuration']
-    clinical_params = ['HbA1c', 'InsSensitivity', 'InsCarbRatio']
+    clinical_params = ['HbA1c', 'InsSensitivity', 'InsCarbRatio', 'avgSessionsPerWeek']
 
     # Root nodes
     for node in tiers['static']:
@@ -465,7 +488,7 @@ def apply_expert_constraints(learner, tiers):
 
     # --------------------------------------------------------------
     # Rule 3: Pre-Exercise 
-    drivers = ['IOBnorm', 'COBnorm', 'AOB', 'TotalCWL']
+    drivers = ['IOBnormStartEx', 'COBnormStartEx', 'AOB', 'TotalCWL']
     dynamics = ['preExerciseRoc', 'preExerciseGlucoseCV']
     endpoint = 'startExerciseGlucoseLevel'
 
@@ -496,7 +519,7 @@ def apply_expert_constraints(learner, tiers):
     # --------------------------------------------------------------
     # Rule 4: Exercise layer
     modality = 'ExerciseModality'
-    exercise_params = ['MET', 'DurationValue', 'MET_min']
+    exercise_params = ['MET', 'DurationValue', 'MET_min', 'CHODuringEx', 'InsulinDuringEx']
 
    # Parameters (Time/Intensity) cannot cause the Modality 
     if modality in learner.names():
@@ -509,6 +532,23 @@ def apply_expert_constraints(learner, tiers):
         learner.addForbiddenArc('MET', 'DurationValue')
         learner.addForbiddenArc('DurationValue', 'MET')
 
+    # --------------------------------------------------------------
+    # Rule 6: End-Exercise Snapshot Hierarchy
+    # --------------------------------------------------------------
+    end_drivers = ['IOBnormEndEx', 'COBnormEndEx']
+    end_glucose = 'endExerciseGlucoseLevel'
+
+    # The glucose level at the end of the workout cannot cause 
+    # the mathematical amount of active insulin or carbs in the body
+    if end_glucose in learner.names():
+        for driver in end_drivers:
+            if driver in learner.names():
+                learner.addForbiddenArc(end_glucose, driver)
+
+    # IOB and COB at the end of the workout do not mathematically cause each other
+    if 'IOBnormEndEx' in learner.names() and 'COBnormEndEx' in learner.names():
+        learner.addForbiddenArc('IOBnormEndEx', 'COBnormEndEx')
+        learner.addForbiddenArc('COBnormEndEx', 'IOBnormEndEx')
 
     # --------------------------------------------------------------
     # Rule 5: Outcome Chronology (During vs Post)
@@ -598,6 +638,8 @@ def visualize_network(bn, tiers):
             color, font = "#E69F00", "black"   # Amber
         elif node in tiers['exercise']:
             color, font = "#D55E00", "white"   # Vermillion
+        elif node in tiers['end_exercise']:
+            color, font = "#56B4E9", "black"   # Sky Blue
         elif node in tiers['outcome_during'] or node in tiers['outcome_post']:
             color, font = "#009E73", "white"   # Emerald Green
         else:
