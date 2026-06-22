@@ -188,12 +188,15 @@ def discretize_data(df, cv_strategy, bmi_strategy, hba1c_strategy, glucose_strat
     if 'EnergyPerMinute' in df_discrete.columns: df_discrete["EnergyPerMinute"] = pd.qcut(df_discrete["EnergyPerMinute"], q=3, labels=["Low", "Medium", "High"], duplicates='drop')
 
     if 'CHODuringEx' in df_discrete.columns: 
-        bins = pd.qcut(df_discrete["CHODuringEx"], q=3, duplicates='drop')
-        df_discrete["CHODuringEx"] = bins.cat.rename_categories([f"Carb Load Bin {i+1}" for i in range(len(bins.cat.categories))]
-    )
+        # If the value is exactly 0, label it 'Zero', otherwise 'Non-Zero'
+        df_discrete["CHODuringEx"] = np.where(df_discrete["CHODuringEx"] == 0, 'Zero', 'Non-Zero')
+        # Convert to categorical for pyAgrum compatibility
+        df_discrete["CHODuringEx"] = df_discrete["CHODuringEx"].astype('category')
+
     if 'InsulinDuringEx' in df_discrete.columns: 
-        bins = pd.qcut(df_discrete["InsulinDuringEx"], q=3, duplicates='drop')
-        df_discrete["InsulinDuringEx"] = bins.cat.rename_categories([f"Insulin Load Bin {i+1}" for i in range(len(bins.cat.categories))])
+        # Same logic for Insulin
+        df_discrete["InsulinDuringEx"] = np.where(df_discrete["InsulinDuringEx"] == 0, 'Zero', 'Non-Zero')
+        df_discrete["InsulinDuringEx"] = df_discrete["InsulinDuringEx"].astype('category')
 
     if 'IOBnormEndEx' in df_discrete.columns: df_discrete["IOBnormEndEx"] = pd.qcut(df_discrete["IOBnormEndEx"], q=3, labels=["Low Impact", "Medium Impact", "High Impact"], duplicates='drop')
     if 'COBnormEndEx' in df_discrete.columns: 
@@ -229,7 +232,9 @@ def discretize_data(df, cv_strategy, bmi_strategy, hba1c_strategy, glucose_strat
     if 'postExerciseTimeToNadir' in df_discrete.columns: df_discrete["postExerciseTimeToNadir"] = pd.qcut(df_discrete["postExerciseTimeToNadir"], q=3, labels=["Early Drop", "Mid Drop", "Late Drop"])
     if 'postExerciseTBR' in df_discrete.columns: df_discrete["postExerciseTBR"] = pd.cut(df_discrete["postExerciseTBR"], bins=[-np.inf, 0, 4, np.inf], labels=["Perfect", "Mild", "Risk"])
     if 'postExerciseTAR' in df_discrete.columns: df_discrete["postExerciseTAR"] = pd.cut(df_discrete["postExerciseTAR"], bins=[-np.inf, 25, 50, np.inf], labels=["Target", "Elevated", "Risk"])
-    if 'postExerciseHypoEvent' in df_discrete.columns: df_discrete["postExerciseHypoEvent"] = df_discrete["postExerciseHypoEvent"].map({0: "No", 1: "Yes"})
+    if 'postExerciseHypoEvent' in df_discrete.columns: 
+        df_discrete["postExerciseHypoEvent"] = df_discrete["postExerciseHypoEvent"].map({0: "No", 1: "Yes"})
+        df_discrete["postExerciseHypoEvent"] = df_discrete["postExerciseHypoEvent"].astype('category')
     if 'postExerciseAUC70' in df_discrete.columns:
         non_zero_auc = df_discrete[df_discrete['postExerciseAUC70'] > 0]['postExerciseAUC70']
         if not non_zero_auc.empty:
@@ -533,7 +538,7 @@ def apply_expert_constraints(learner, tiers):
         learner.addForbiddenArc('DurationValue', 'MET')
 
     # --------------------------------------------------------------
-    # Rule 6: End-Exercise Snapshot Hierarchy
+    # Rule 5: End-Exercise Snapshot Hierarchy
     # --------------------------------------------------------------
     end_drivers = ['IOBnormEndEx', 'COBnormEndEx']
     end_glucose = 'endExerciseGlucoseLevel'
@@ -551,7 +556,7 @@ def apply_expert_constraints(learner, tiers):
         learner.addForbiddenArc('COBnormEndEx', 'IOBnormEndEx')
 
     # --------------------------------------------------------------
-    # Rule 5: Outcome Chronology (During vs Post)
+    # Rule 6: Outcome Chronology (During vs Post)
     # PART A: Inter-Layer Strict Time Travel Prevention (Post cannot cause During)
     # ---------------------------------------------------------
     for post_metric in tiers['outcome_post']:
@@ -633,15 +638,17 @@ def visualize_network(bn, tiers):
 
     for node in bn.names():
         if node in tiers['static']:
-            color, font = "#0072B2", "white"   # Deep Blue
+            color, font = "#0072B2", "white"   
         elif node in tiers['pre']:
-            color, font = "#E69F00", "black"   # Amber
+            color, font = "#E69F00", "black"   
         elif node in tiers['exercise']:
-            color, font = "#D55E00", "white"   # Vermillion
+            color, font = "#D55E00", "white" 
         elif node in tiers['end_exercise']:
-            color, font = "#56B4E9", "black"   # Sky Blue
-        elif node in tiers['outcome_during'] or node in tiers['outcome_post']:
-            color, font = "#009E73", "white"   # Emerald Green
+            color, font = "#660000", "white"   
+        elif node in tiers['outcome_during']:
+            color, font = "#339966", "white" 
+        elif node in tiers['outcome_post']:
+            color, font = "#003300", "white"  
         else:
             color, font = "#D3D3D3", "black"   # Grey
             print(f"⚠️ Warning: '{node}' didn't match any tier list!")

@@ -26,6 +26,7 @@ function exerciseWithWearableData()
     exercise_valid.COBnormStartEx = zeros(0,1);
     exercise_valid.COBnormEndEx = zeros(0,1);
     exercise_valid.CHODuringEx = zeros(0,1);
+    exercise_valid.ReportedCHODuringEx = zeros(0,1);
 
     hoursPreExercise = 2;
     hoursPostExercise = 6;
@@ -251,6 +252,16 @@ function exerciseWithWearableData()
                 end
             end
 
+            reportedChoDuringExercise = 0;
+            reportedMealTimes = sessionMealData.UTCDtTm;
+            idxReportedMealsDuringExercise = find(reportedMealTimes > startExercise & reportedMealTimes < endExercise);
+            if ~isempty(idxReportedMealsDuringExercise)
+                for idx = 1:length(idxReportedMealsDuringExercise)
+                    reportedChoDuringExercise = reportedChoDuringExercise + sessionMealData.CarbsNet(idx);
+                end
+            end
+            
+
             
             % -------- APPEND SESSION --------
             
@@ -270,6 +281,7 @@ function exerciseWithWearableData()
             curr_session.COBnormStartEx = cob_norm_startExercise;
             curr_session.COBnormEndEx = cob_norm_endExercise;
             curr_session.CHODuringEx = choDuringExercise;
+            curr_session.ReportedCHODuringEx = reportedChoDuringExercise;
             
             exercise_valid(counter,:) = curr_session;
             
